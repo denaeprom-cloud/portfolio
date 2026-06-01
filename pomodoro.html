@@ -225,6 +225,48 @@
     filter: drop-shadow(0 0 6px rgba(126, 203, 154, 0.35));
   }
 
+  /* ===== Ring Dynamic Effects (only when running) ===== */
+
+  /* Focus: energetic pulse glow */
+  body[data-theme="focus"] .ring-container.running .ring-progress {
+    animation: pulseGlow 1s ease-in-out infinite;
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(88, 130, 255, 0.35)); }
+    50%      { filter: drop-shadow(0 0 18px rgba(88, 130, 255, 0.7)) drop-shadow(0 0 32px rgba(88, 130, 255, 0.35)); }
+  }
+
+  /* Short break: gentle breathe (scale ring) */
+  body[data-theme="short"] .ring-container.running {
+    animation: gentleBreathe 3s ease-in-out infinite;
+  }
+
+  @keyframes gentleBreathe {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.04); }
+  }
+
+  /* Long break: soft sway + slow shimmer */
+  body[data-theme="long"] .ring-container.running {
+    animation: softSway 4s ease-in-out infinite;
+  }
+
+  @keyframes softSway {
+    0%, 100% { transform: rotate(0deg); }
+    25%      { transform: rotate(2deg); }
+    75%      { transform: rotate(-2deg); }
+  }
+
+  body[data-theme="long"] .ring-container.running .ring-progress {
+    animation: shimmerGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes shimmerGlow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(126, 203, 154, 0.3)); }
+    50%      { filter: drop-shadow(0 0 14px rgba(126, 203, 154, 0.55)) drop-shadow(0 0 24px rgba(126, 203, 154, 0.2)); }
+  }
+
   .timer-text {
     position: absolute;
     inset: 0;
@@ -827,6 +869,7 @@
 <script>
   // ===== CONSTANTS =====
   const CIRCUMFERENCE = 2 * Math.PI * 92; // ~578.053
+  const ringContainer = document.querySelector('.ring-container');
   const ringCircle = document.getElementById('ringCircle');
   const timerDisplay = document.getElementById('timerDisplay');
   const timerLabel = document.getElementById('timerLabel');
@@ -983,6 +1026,7 @@
     intervalId = setInterval(tick, 1000);
     btnStart.textContent = '⏸ 暂停';
     btnStart.classList.add('running');
+    ringContainer.classList.add('running');
     updateLabel();
     updateTitle();
   }
@@ -993,6 +1037,7 @@
     intervalId = null;
     btnStart.textContent = '▶ 开始';
     btnStart.classList.remove('running');
+    ringContainer.classList.remove('running');
     updateLabel();
     document.title = '🍅 Pomodoro';
   }
