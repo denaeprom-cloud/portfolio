@@ -323,15 +323,7 @@
     75%      { stroke-width: 6; }
   }
 
-  /* Long break: slow rotation + breathing */
-  body[data-theme="long"] .ring-container.running {
-    animation: longRotate 8s linear infinite;
-  }
-
-  @keyframes longRotate {
-    0%   { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
+  /* Long break: slow rotation driven by JS for smooth pause */
 
   body[data-theme="long"] .ring-container.running .ring-progress {
     animation: longStrokeGlow 3s ease-in-out infinite;
@@ -999,6 +991,8 @@
   let totalSeconds = 25 * 60;
   let remaining = totalSeconds;
   let intervalId = null;
+  let rotInterval = null;
+  let rotDeg = 0;
   let running = false;
 
   const MODES = {
@@ -1041,7 +1035,10 @@
 
   // ===== TIMER =====
   function setMode(newMode) {
-    if (running) pauseTimer();
+    if (running) {
+      stopRotation();
+      pauseTimer();
+    }
     mode = newMode;
     totalSeconds = MODES[mode].min * 60;
     remaining = totalSeconds;
@@ -1161,12 +1158,35 @@
     }
   }
 
+  function startRotation() {
+    if (mode !== 'long') return;
+    rotDeg = 0;
+    ringContainer.style.transform = 'rotate(0deg)';
+    ringContainer.style.transition = 'none';
+    // Force reflow so the reset above takes effect before we start stepping
+    ringContainer.offsetHeight;
+    ringContainer.style.transition = '';
+    rotInterval = setInterval(() => {
+      rotDeg += 0.8; // ~1 full rotation per 7.5s
+      ringContainer.style.transform = `rotate(${rotDeg}deg)`;
+      ringContainer.style.transition = 'transform 0.3s linear';
+    }, 300);
+  }
+
+  function stopRotation() {
+    if (rotInterval) { clearInterval(rotInterval); rotInterval = null; }
+    // Smoothly rotate back to 0
+    ringContainer.style.transition = 'transform 1.2s cubic-bezier(0.25, 0.1, 0.25, 1)';
+    ringContainer.style.transform = 'rotate(0deg)';
+  }
+
   function startTimer() {
     running = true;
     intervalId = setInterval(tick, 1000);
     btnStart.textContent = '⏸ 暂停';
     btnStart.classList.add('running');
     ringContainer.classList.add('running');
+    startRotation();
     updateLabel();
     updateTitle();
   }
@@ -1178,6 +1198,7 @@
     btnStart.textContent = '▶ 开始';
     btnStart.classList.remove('running');
     ringContainer.classList.remove('running');
+    stopRotation();
     updateLabel();
     document.title = '🍅 Pomodoro';
   }
