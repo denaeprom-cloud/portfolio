@@ -71,13 +71,13 @@
   }
 
   body[data-theme="short"] {
-    background-color: #FFF0F0;
+    background-color: #F0F8FC;
     background-image:
-      radial-gradient(ellipse 280px 200px at 18% 12%, #FFE0E0 0%, transparent 65%),
-      radial-gradient(ellipse 200px 260px at 82% 88%, #FFE8E8 0%, transparent 65%),
-      radial-gradient(ellipse 240px 160px at 88% 6%, #FFDCDC 0%, transparent 65%),
-      radial-gradient(ellipse 190px 220px at 8% 82%, #FFEFEF 0%, transparent 65%),
-      radial-gradient(ellipse 300px 150px at 48% 48%, #FFF5F5 0%, transparent 55%);
+      radial-gradient(ellipse 280px 200px at 18% 12%, #E0F0FA 0%, transparent 65%),
+      radial-gradient(ellipse 200px 260px at 82% 88%, #E8F4FC 0%, transparent 65%),
+      radial-gradient(ellipse 240px 160px at 88% 6%, #DCEEF8 0%, transparent 65%),
+      radial-gradient(ellipse 190px 220px at 8% 82%, #EFF6FB 0%, transparent 65%),
+      radial-gradient(ellipse 300px 150px at 48% 48%, #F5FAFD 0%, transparent 55%);
   }
 
   body[data-theme="long"] {
@@ -234,7 +234,7 @@
     transition: opacity 0.6s ease-out, stroke 0.5s, r 0.4s ease-out;
   }
 
-  body[data-theme="short"] .lead-dot { stroke: #FF9A9E; fill: #FFF5F5; }
+  body[data-theme="short"] .lead-dot { stroke: #7EC8E8; fill: #F5FAFD; }
   body[data-theme="long"]  .lead-dot { stroke: #7ECB9A; fill: #F5FFF8; }
 
   .ring-container.running .lead-dot { opacity: 1; }
@@ -907,13 +907,13 @@
               <animate attributeName="stop-color" values="#7B5CFF;#4A90FF;#7B5CFF" dur="2s" repeatCount="indefinite"/>
             </stop>
           </linearGradient>
-          <!-- Short break: warm pink gradient -->
+          <!-- Short break: sky blue gradient -->
           <linearGradient id="gradShort" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#FF9A9E">
-              <animate attributeName="stop-color" values="#FF9A9E;#FFB3A7;#FF9A9E" dur="3s" repeatCount="indefinite"/>
+            <stop offset="0%" stop-color="#7EC8E8">
+              <animate attributeName="stop-color" values="#7EC8E8;#A8DFF0;#7EC8E8" dur="3s" repeatCount="indefinite"/>
             </stop>
-            <stop offset="100%" stop-color="#FFB3A7">
-              <animate attributeName="stop-color" values="#FFB3A7;#FF9A9E;#FFB3A7" dur="3s" repeatCount="indefinite"/>
+            <stop offset="100%" stop-color="#A8DFF0">
+              <animate attributeName="stop-color" values="#A8DFF0;#7EC8E8;#A8DFF0" dur="3s" repeatCount="indefinite"/>
             </stop>
           </linearGradient>
           <!-- Long break: fresh green gradient -->
@@ -1057,7 +1057,7 @@
     const gradMap = { focus: 'url(#gradFocus)', short: 'url(#gradShort)', long: 'url(#gradLong)' };
     ringCircle.setAttribute('stroke', gradMap[mode]);
     ringCircle.classList.toggle('break', mode !== 'focus');
-    leadDot.setAttribute('stroke', mode === 'focus' ? '#5B8FFF' : mode === 'short' ? '#FF9A9E' : '#7ECB9A');
+    leadDot.setAttribute('stroke', mode === 'focus' ? '#5B8FFF' : mode === 'short' ? '#7EC8E8' : '#7ECB9A');
 
     btnStart.textContent = '▶ 开始';
     btnStart.classList.remove('running');
@@ -1230,7 +1230,7 @@
   // ===== DECORATIONS =====
   const DECOS = {
     focus: ['💪','🔥','⚡','🎯','🏆','🚀','💥','⭐','🌟','✨'],
-    short: ['🌸','🎀','🧸','🍰','🫧','💖','🌷','🍪','🐣','💝'],
+    short: ['☁️','🫧','💎','🐳','🌊','✨','🦋','☀️','🪽','💙'],
     long:  ['🌿','🍃','🌱','🦋','🌺','💚','🍀','🌈','☁️','🫧'],
   };
 
