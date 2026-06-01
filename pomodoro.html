@@ -197,6 +197,7 @@
     width: 240px;
     height: 240px;
     flex-shrink: 0;
+    overflow: visible;
     transition: transform 1s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 
@@ -204,6 +205,7 @@
     width: 100%;
     height: 100%;
     transform: rotate(-90deg);
+    overflow: visible;
   }
 
   .ring-bg {
@@ -894,7 +896,7 @@
     </div>
 
     <div class="ring-container" id="ringContainer">
-      <svg class="ring-svg" viewBox="0 0 200 200">
+      <svg class="ring-svg" viewBox="-10 -10 220 220">
         <defs>
           <!-- Focus: energetic blue-purple gradient -->
           <linearGradient id="gradFocus" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1199,6 +1201,11 @@
     btnStart.classList.remove('running');
     ringContainer.classList.remove('running');
     stopRotation();
+
+    // Smooth-ring: set target values so CSS transitions ease back
+    ringCircle.style.strokeWidth = '8';
+    ringCircle.style.filter = 'drop-shadow(0 0 4px rgba(0,0,0,0.1))';
+
     updateLabel();
     document.title = '🍅 Pomodoro';
   }
