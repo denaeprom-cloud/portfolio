@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍅 Pomodoro</title>
+<style>
+  /* ===== Reset & Variables ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e14;
+    --bg-card: #1a1f2b;
+    --border: #21262d;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --accent-glow: rgba(88, 166, 255, 0.3);
+    --red: #f85149;
+    --red-glow: rgba(248, 81, 73, 0.3);
+    --green: #3fb950;
+    --green-glow: rgba(63, 185, 80, 0.3);
+    --radius: 14px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  }
+
+  html { height: 100%; }
+
+  body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(88,166,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(88,166,255,0.025) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+  }
+
+  /* ===== App Shell ===== */
+  .app {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 900px;
+    height: 100vh;
+    max-height: 650px;
+  }
+
+  /* ===== Panels ===== */
+  .timer-panel, .task-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .timer-panel {
+    flex: 1.2;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
+  .task-panel {
+    flex: 0.9;
+    gap: 1rem;
+    overflow: hidden;
+  }
+
+  /* ===== Timer Ring ===== */
+  .ring-container {
+    position: relative;
+    width: 240px;
+    height: 240px;
+    flex-shrink: 0;
+  }
+
+  .ring-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .ring-bg {
+    fill: none;
+    stroke: #21262d;
+    stroke-width: 8;
+  }
+
+  .ring-progress {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke 0.4s;
+  }
+
+  .ring-progress.break { stroke: var(--green); }
+
+  .timer-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .timer-time {
+    font-family: var(--font-mono);
+    font-size: 2.8rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .timer-label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 0.4rem;
+    transition: color 0.4s;
+  }
+
+  .timer-label.focus { color: var(--accent); }
+  .timer-label.break { color: var(--green); }
+
+  /* ===== Controls ===== */
+  .controls {
+    display: flex;
+    gap: 0.8rem;
+  }
+
+  .btn {
+    padding: 0.65rem 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.2s;
+  }
+
+  .btn:hover { border-color: rgba(255,255,255,0.3); }
+
+  .btn-start {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    min-width: 90px;
+  }
+
+  .btn-start:hover {
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  .btn-start.running {
+    background: transparent;
+    border-color: #d29922;
+    color: #d29922;
+  }
+
+  .btn-start.running:hover {
+    box-shadow: 0 0 20px rgba(210,153,34,0.3);
+  }
+
+  .btn-reset {
+    color: var(--text-dim);
+  }
+  .btn-reset:hover { color: var(--text); }
+
+  /* ===== Phase Pills ===== */
+  .phase-pills {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .phase-pill {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-dim);
+    background: transparent;
+    font-family: var(--font);
+  }
+
+  .phase-pill.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(88,166,255,0.1);
+  }
+
+  .phase-pill:hover { border-color: rgba(255,255,255,0.3); }
+
+  /* ===== Task Panel ===== */
+  .task-panel h3 {
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .task-input-wrap {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .task-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 0.8rem;
+    color: var(--text);
+    font-size: 0.85rem;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .task-input:focus { border-color: var(--accent); }
+  .task-input::placeholder { color: var(--text-dim); }
+
+  .btn-add {
+    padding: 0.6rem 1rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .task-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-right: 0.3rem;
+  }
+
+  .task-list::-webkit-scrollbar { width: 4px; }
+  .task-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
+    background: var(--bg);
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    animation: slideIn 0.25s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .task-item:hover { border-color: var(--border); }
+
+  .task-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+  }
+
+  .task-check:hover { border-color: var(--green); }
+
+  .task-item.done .task-check {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  .task-item.done .task-text {
+    text-decoration: line-through;
+    color: var(--text-dim);
+  }
+
+  .task-text {
+    flex: 1;
+    font-size: 0.88rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .task-del {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    opacity: 0;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .task-item:hover .task-del { opacity: 1; }
+  .task-del:hover { color: var(--red); background: rgba(248,81,73,0.1); }
+
+  .task-empty {
+    color: var(--text-dim);
+    font-size: 0.82rem;
+    text-align: center;
+    padding: 2rem 0;
+  }
+
+  /* ===== Stats bar ===== */
+  .stats-bar {
+    display: flex;
+    gap: 1.5rem;
+    flex-shrink: 0;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+
+  .stats-bar span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .stats-bar .stat-val { color: var(--text); font-weight: 600; }
+
+  /* ===== Completion burst ===== */
+  .burst {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: burstPop 1.2s ease-out forwards;
+  }
+
+  .burst-text {
+    font-size: 3rem;
+    animation: burstText 1.2s ease-out forwards;
+  }
+
+  @keyframes burstPop {
+    0% { opacity: 1; }
+    80% { opacity: 0.6; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes burstText {
+    0% { transform: scale(0.3); opacity: 1; }
+    60% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 700px) {
+    body { align-items: flex-start; overflow-y: auto; }
+    .app {
+      flex-direction: column;
+      max-height: none;
+      padding: 1rem;
+      gap: 1rem;
+    }
+    .timer-panel { padding: 1.5rem; gap: 1rem; }
+    .ring-container { width: 180px; height: 180px; }
+    .timer-time { font-size: 2.2rem; }
+    .task-panel { max-height: 380px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ===== Timer Panel ===== -->
+  <div class="timer-panel">
+    <div class="phase-pills" id="phasePills">
+      <button class="phase-pill active" data-mode="focus" data-min="25">🍅 专注 25</button>
+      <button class="phase-pill" data-mode="short" data-min="5">☕ 小休 5</button>
+      <button class="phase-pill" data-mode="long" data-min="15">🌿 长休 15</button>
+    </div>
+
+    <div class="ring-container">
+      <svg class="ring-svg" viewBox="0 0 200 200">
+        <circle class="ring-bg" cx="100" cy="100" r="92"/>
+        <circle class="ring-progress" id="ringCircle" cx="100" cy="100" r="92"
+                stroke-dasharray="578.053" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-text">
+        <div class="timer-time" id="timerDisplay">25:00</div>
+        <div class="timer-label focus" id="timerLabel">准备就绪</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-start" id="btnStart" onclick="toggleTimer()">▶ 开始</button>
+      <button class="btn btn-reset" onclick="resetTimer()">↺ 重置</button>
+    </div>
+
+    <div class="stats-bar">
+      <span>🍅 <span class="stat-val" id="statPomos">0</span> 番茄</span>
+      <span>⏱ <span class="stat-val" id="statMinutes">0</span> 分钟</span>
+      <span>✅ <span class="stat-val" id="statTasks">0</span> 任务</span>
+    </div>
+  </div>
+
+  <!-- ===== Task Panel ===== -->
+  <div class="task-panel">
+    <h3>📋 今日待办</h3>
+    <div class="task-input-wrap">
+      <input class="task-input" id="taskInput" placeholder="添加新任务..." maxlength="60" onkeydown="if(event.key==='Enter')addTask()">
+      <button class="btn-add" onclick="addTask()">+ 添加</button>
+    </div>
+    <div class="task-list" id="taskList">
+      <div class="task-empty">✨ 写下今天要做的事吧</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ===== CONSTANTS =====
+  const CIRCUMFERENCE = 2 * Math.PI * 92; // ~578.053
+  const ringCircle = document.getElementById('ringCircle');
+  const timerDisplay = document.getElementById('timerDisplay');
+  const timerLabel = document.getElementById('timerLabel');
+  const btnStart = document.getElementById('btnStart');
+  const taskList = document.getElementById('taskList');
+  const taskInput = document.getElementById('taskInput');
+
+  // ===== STATE =====
+  let mode = 'focus';        // 'focus' | 'short' | 'long'
+  let totalSeconds = 25 * 60;
+  let remaining = totalSeconds;
+  let intervalId = null;
+  let running = false;
+
+  const MODES = {
+    focus:  { min: 25, label: '专注中...',  cls: 'focus' },
+    short:  { min: 5,  label: '小憩一下...', cls: 'break' },
+    long:   { min: 15, label: '深度休息...', cls: 'break' },
+  };
+
+  // ===== AUDIO =====
+  function playBeep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+
+      // Three quick beeps
+      [0, 0.15, 0.3].forEach((delay, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.type = 'sine';
+        o.frequency.setValueAtTime(880 - i * 120, ctx.currentTime + delay);
+        g.gain.setValueAtTime(0, ctx.currentTime + delay);
+        g.gain.linearRampToValueAtTime(0.25, ctx.currentTime + delay + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.3);
+        o.start(ctx.currentTime + delay);
+        o.stop(ctx.currentTime + delay + 0.3);
+      });
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.6);
+    } catch(e) {}
+  }
+
+  // ===== TIMER =====
+  function setMode(newMode) {
+    if (running) pauseTimer();
+    mode = newMode;
+    totalSeconds = MODES[mode].min * 60;
+    remaining = totalSeconds;
+    updateDisplay();
+    updateRing();
+    updateLabel();
+    updatePhasePills();
+
+    // Reset ring color class
+    ringCircle.classList.toggle('break', mode !== 'focus');
+    btnStart.textContent = '▶ 开始';
+    btnStart.classList.remove('running');
+    document.title = '🍅 Pomodoro';
+  }
+
+  function updatePhasePills() {
+    document.querySelectorAll('.phase-pill').forEach(p => {
+      p.classList.toggle('active', p.dataset.mode === mode);
+    });
+  }
+
+  function updateDisplay() {
+    const min = Math.floor(remaining / 60);
+    const sec = remaining % 60;
+    timerDisplay.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  }
+
+  function updateLabel() {
+    const cfg = MODES[mode];
+    timerLabel.textContent = running ? cfg.label : (mode === 'focus' ? '准备专注' : '准备休息');
+    timerLabel.className = 'timer-label ' + cfg.cls;
+  }
+
+  function updateRing() {
+    const pct = 1 - remaining / totalSeconds;
+    ringCircle.setAttribute('stroke-dashoffset', pct * CIRCUMFERENCE);
+  }
+
+  function updateTitle() {
+    const cfg = MODES[mode];
+    const emoji = cfg.cls === 'focus' ? '🍅' : '☕';
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    const time = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    document.title = running ? `${time} ${emoji} ${cfg.label}` : '🍅 Pomodoro';
+  }
+
+  function tick() {
+    if (remaining <= 0) {
+      complete();
+      return;
+    }
+    remaining--;
+    updateDisplay();
+    updateRing();
+    updateTitle();
+  }
+
+  function complete() {
+    pauseTimer();
+    playBeep();
+    showBurst();
+
+    if (mode === 'focus') {
+      recordPomodoro();
+    }
+    // Auto-switch: focus → break, break → idle
+    if (mode === 'focus') {
+      const pomos = getTodayStats().completedPomodoros;
+      // Every 4th pomodoro → long break
+      setMode(pomos % 4 === 0 && pomos > 0 ? 'long' : 'short');
+    } else {
+      setMode('focus');
+    }
+  }
+
+  function toggleTimer() {
+    if (running) {
+      pauseTimer();
+    } else {
+      startTimer();
+    }
+  }
+
+  function startTimer() {
+    running = true;
+    intervalId = setInterval(tick, 1000);
+    btnStart.textContent = '⏸ 暂停';
+    btnStart.classList.add('running');
+    updateLabel();
+    updateTitle();
+  }
+
+  function pauseTimer() {
+    running = false;
+    clearInterval(intervalId);
+    intervalId = null;
+    btnStart.textContent = '▶ 开始';
+    btnStart.classList.remove('running');
+    updateLabel();
+    document.title = '🍅 Pomodoro';
+  }
+
+  function resetTimer() {
+    if (running) pauseTimer();
+    remaining = totalSeconds;
+    updateDisplay();
+    updateRing();
+    updateLabel();
+    document.title = '🍅 Pomodoro';
+  }
+
+  function showBurst() {
+    const el = document.createElement('div');
+    el.className = 'burst';
+    el.innerHTML = `<div class="burst-text">${mode === 'focus' ? '🍅' : '☕'}</div>`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1300);
+  }
+
+  // ===== PHASE PILLS =====
+  document.getElementById('phasePills').addEventListener('click', e => {
+    const pill = e.target.closest('.phase-pill');
+    if (!pill) return;
+    setMode(pill.dataset.mode);
+  });
+
+  // ===== STATS =====
+  function getTodayStats() {
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      const raw = localStorage.getItem('pomodoro_stats');
+      const data = JSON.parse(raw);
+      if (data && data.date === today) return data;
+    } catch(e) {}
+    return { date: today, completedPomodoros: 0, totalFocusMinutes: 0 };
+  }
+
+  function saveStats(s) {
+    localStorage.setItem('pomodoro_stats', JSON.stringify(s));
+  }
+
+  function recordPomodoro() {
+    const s = getTodayStats();
+    s.completedPomodoros++;
+    s.totalFocusMinutes += MODES.focus.min;
+    saveStats(s);
+    renderStats();
+  }
+
+  function renderStats() {
+    const s = getTodayStats();
+    document.getElementById('statPomos').textContent = s.completedPomodoros;
+    document.getElementById('statMinutes').textContent = s.totalFocusMinutes;
+    const tasks = getTasks();
+    const done = tasks.filter(t => t.done).length;
+    document.getElementById('statTasks').textContent = `${done}/${tasks.length}`;
+  }
+
+  // ===== TASKS =====
+  function getTasks() {
+    try {
+      const raw = localStorage.getItem('pomodoro_tasks');
+      return JSON.parse(raw) || [];
+    } catch(e) { return []; }
+  }
+
+  function saveTasks(tasks) {
+    localStorage.setItem('pomodoro_tasks', JSON.stringify(tasks));
+  }
+
+  function addTask() {
+    const text = taskInput.value.trim();
+    if (!text) return;
+    const tasks = getTasks();
+    tasks.unshift({
+      id: Date.now(),
+      text,
+      done: false,
+      createdAt: new Date().toISOString().slice(0, 10),
+    });
+    saveTasks(tasks);
+    taskInput.value = '';
+    renderTasks();
+    renderStats();
+  }
+
+  function toggleTask(id) {
+    const tasks = getTasks();
+    const t = tasks.find(t => t.id === id);
+    if (t) { t.done = !t.done; saveTasks(tasks); renderTasks(); renderStats(); }
+  }
+
+  function deleteTask(id) {
+    let tasks = getTasks();
+    tasks = tasks.filter(t => t.id !== id);
+    saveTasks(tasks);
+    renderTasks();
+    renderStats();
+  }
+
+  function renderTasks() {
+    const tasks = getTasks();
+    if (!tasks.length) {
+      taskList.innerHTML = '<div class="task-empty">✨ 写下今天要做的事吧</div>';
+      return;
+    }
+    taskList.innerHTML = tasks.map(t => `
+      <div class="task-item ${t.done ? 'done' : ''}" data-id="${t.id}">
+        <div class="task-check" onclick="toggleTask(${t.id})">${t.done ? '✓' : ''}</div>
+        <span class="task-text">${escapeHtml(t.text)}</span>
+        <button class="task-del" onclick="deleteTask(${t.id})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function escapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // ===== INIT =====
+  ringCircle.style.strokeDasharray = CIRCUMFERENCE;
+  ringCircle.style.strokeDashoffset = '0';
+  renderTasks();
+  renderStats();
+  updateDisplay();
+</script>
+</body>
+</html>
