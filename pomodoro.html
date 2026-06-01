@@ -1185,6 +1185,7 @@
   function startTimer() {
     running = true;
     intervalId = setInterval(tick, 1000);
+    updateRing(); // snap dot to current progress immediately
     btnStart.textContent = '⏸ 暂停';
     btnStart.classList.add('running');
     ringContainer.classList.add('running');
