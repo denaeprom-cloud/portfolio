@@ -1050,7 +1050,7 @@
   <div class="timer-panel">
     <div class="cute-title">🧸 土土时钟</div>
     <div class="phase-pills" id="phasePills">
-      <button class="phase-pill active" data-mode="focus" data-min="25">🍅 专注</button>
+      <button class="phase-pill active" data-mode="focus" data-min="40">🍅 专注</button>
       <button class="phase-pill" data-mode="short" data-min="5">☕ 小休</button>
       <button class="phase-pill" data-mode="long" data-min="15">🌿 长休</button>
     </div>
@@ -1151,7 +1151,7 @@
 
   // ===== STATE =====
   let mode = 'focus';        // 'focus' | 'short' | 'long'
-  let totalSeconds = 25 * 60;
+  let totalSeconds = MODES.focus.min * 60;
   let remaining = totalSeconds;
   let intervalId = null;
   let rotInterval = null;
@@ -1159,7 +1159,7 @@
   let running = false;
 
   const MODES = {
-    focus:  { min: 25, label: '专注ing…',  idle: '准备开干！',    cls: 'focus' },
+    focus:  { min: 40, label: '专注ing…',  idle: '准备开干！',    cls: 'focus' },
     short:  { min: 5,  label: '小憩一下...', idle: '浅浅休息会儿？', cls: 'break' },
     long:   { min: 15, label: '嘻嘻~~休息ing~~', idle: '好累呀。。。',    cls: 'break' },
   };
