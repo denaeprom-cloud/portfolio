@@ -666,7 +666,7 @@
       <button class="btn-add" onclick="addTask()">+ 添加</button>
     </div>
     <div class="task-list" id="taskList">
-      <div class="task-empty">✨ 写下今天要做的事吧</div>
+      <div class="task-empty">👑 公主今日的日程</div>
     </div>
   </div>
 </div>
@@ -946,7 +946,7 @@
   function renderTasks() {
     const tasks = getTasks();
     if (!tasks.length) {
-      taskList.innerHTML = '<div class="task-empty">✨ 写下今天要做的事吧</div>';
+      taskList.innerHTML = '<div class="task-empty">👑 公主今日的日程</div>';
       return;
     }
     taskList.innerHTML = tasks.map(t => `
