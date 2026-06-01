@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>个人主页</title>
+<style>
+  /* ===== Reset & Base ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #0a0e14;
+    --bg-secondary: #131820;
+    --bg-card: #1a1f2b;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --accent: #58a6ff;
+    --accent-glow: rgba(88, 166, 255, 0.35);
+    --accent-dim: rgba(88, 166, 255, 0.12);
+    --border: #21262d;
+    --radius: 12px;
+    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ===== Background Grid ===== */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(88, 166, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(88, 166, 255, 0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== Navbar ===== */
+  .navbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(16px) saturate(180%);
+    background: rgba(10, 14, 20, 0.72);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .navbar .logo {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+  }
+  .navbar .logo span { color: var(--text-primary); }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: var(--transition);
+    position: relative;
+  }
+
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -4px; left: 0;
+    width: 0; height: 1px;
+    background: var(--accent);
+    transition: var(--transition);
+  }
+
+  .nav-links a:hover { color: var(--text-primary); }
+  .nav-links a:hover::after { width: 100%; }
+
+  /* ===== Sections ===== */
+  .section {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 100px 2rem;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.8rem;
+  }
+
+  .section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 2.5rem;
+    letter-spacing: -0.5px;
+  }
+
+  /* ===== Hero ===== */
+  .hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3rem;
+    min-height: 100vh;
+    padding-top: 56px;
+  }
+
+  .hero-content { flex: 1; }
+
+  .hero-content .greeting {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+  }
+
+  .hero-content h1 {
+    font-size: 3.4rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -1px;
+    margin-bottom: 0.6rem;
+  }
+
+  .hero-content h1 .highlight {
+    background: linear-gradient(135deg, var(--accent) 0%, #a371f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-content .subtitle {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.8rem;
+  }
+
+  .hero-content .bio {
+    color: var(--text-secondary);
+    max-width: 480px;
+    margin-bottom: 2rem;
+    font-size: 0.98rem;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.6rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transition);
+    border: 1px solid transparent;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { box-shadow: 0 0 24px var(--accent-glow); transform: translateY(-1px); }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--text-primary);
+    border-color: var(--border);
+  }
+  .btn-outline:hover { border-color: var(--accent); background: var(--accent-dim); }
+
+  /* ===== Hero Avatar ===== */
+  .hero-avatar {
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .avatar-ring {
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(135deg, var(--accent), #a371f7);
+    animation: rotate-ring 8s linear infinite;
+  }
+
+  @keyframes rotate-ring {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+  }
+
+  .avatar-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+  }
+
+  /* ===== Stats Row ===== */
+  .stats-row {
+    display: flex;
+    gap: 3rem;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .stat-item .stat-num {
+    font-family: var(--font-mono);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .stat-item .stat-label {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-top: 0.2rem;
+  }
+
+  /* ===== About Cards ===== */
+  .about-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.2rem;
+  }
+
+  .about-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.8rem;
+    transition: var(--transition);
+  }
+
+  .about-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 24px var(--accent-dim);
+    transform: translateY(-2px);
+  }
+
+  .about-card .card-icon {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .about-card h3 {
+    font-size: 1.05rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .about-card p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+
+  /* ===== Skills ===== */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .skill-group {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.6rem;
+  }
+
+  .skill-group h4 {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 1rem;
+  }
+
+  .skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .skill-tag {
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 0.35rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-family: var(--font-mono);
+    border: 1px solid rgba(88, 166, 255, 0.18);
+  }
+
+  /* ===== Contact & QR ===== */
+  .contact-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    align-items: start;
+  }
+
+  .contact-info { display: flex; flex-direction: column; gap: 1.2rem; }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: var(--transition);
+  }
+  .contact-item:hover { border-color: var(--accent); }
+
+  .contact-item .ci-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .contact-item .ci-text strong {
+    display: block;
+    font-size: 0.9rem;
+  }
+  .contact-item .ci-text span {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+  }
+
+  .qr-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .qr-section h3 {
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .qr-section p {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+  }
+
+  .qr-code {
+    width: 170px;
+    height: 170px;
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .qr-code canvas,
+  .qr-code img {
+    width: 150px;
+    height: 150px;
+  }
+
+  /* ===== Footer ===== */
+  .footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 2.5rem 2rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+  }
+
+  .footer .heart { color: #f85149; }
+
+  /* ===== Animations ===== */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-in {
+    animation: fadeInUp 0.7s ease both;
+  }
+
+  .delay-1 { animation-delay: 0.1s; }
+  .delay-2 { animation-delay: 0.2s; }
+  .delay-3 { animation-delay: 0.3s; }
+  .delay-4 { animation-delay: 0.4s; }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 768px) {
+    .hero {
+      flex-direction: column-reverse;
+      text-align: center;
+      gap: 2rem;
+    }
+
+    .hero-content h1 { font-size: 2.4rem; }
+    .hero-content .bio { margin: 0 auto 2rem; }
+    .hero-actions { justify-content: center; }
+    .stats-row { justify-content: center; gap: 2rem; }
+
+    .avatar-ring { width: 160px; height: 160px; }
+    .avatar-inner { font-size: 2.8rem; }
+
+    .contact-layout { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Navbar ===== -->
+<nav class="navbar">
+  <div class="logo">&lt;<span>Portfolio</span>/&gt;</div>
+  <ul class="nav-links">
+    <li><a href="#about">关于</a></li>
+    <li><a href="#skills">技能</a></li>
+    <li><a href="#contact">联系</a></li>
+  </ul>
+</nav>
+
+<!-- ===== Hero ===== -->
+<section class="section hero">
+  <div class="hero-content">
+    <p class="greeting animate-in">👋 Hi there，我是</p>
+    <h1 class="animate-in delay-1"><span class="highlight">前端工程师</span></h1>
+    <p class="subtitle animate-in delay-2">专注 Web 体验 · 热爱开源 · 持续精进</p>
+    <p class="bio animate-in delay-3">
+      一名充满热情的前端开发者，致力于构建高性能、优雅且用户友好的 Web 应用。
+      追求像素级还原与流畅交互，相信好代码自己会说话。
+    </p>
+    <div class="hero-actions animate-in delay-4">
+      <a href="#contact" class="btn btn-primary">📬 联系我</a>
+      <a href="#about" class="btn btn-outline">了解更多 ↓</a>
+    </div>
+    <div class="stats-row animate-in delay-4">
+      <div class="stat-item">
+        <div class="stat-num" id="years-counter">5+</div>
+        <div class="stat-label">年经验</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">30+</div>
+        <div class="stat-label">交付项目</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">15+</div>
+        <div class="stat-label">开源贡献</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-avatar animate-in delay-2">
+    <div class="avatar-ring">
+      <div class="avatar-inner">🧑‍💻</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== About ===== -->
+<section class="section" id="about">
+  <p class="section-label">/ about</p>
+  <h2 class="section-title">关于我</h2>
+
+  <div class="about-grid">
+    <div class="about-card">
+      <div class="card-icon">🎯</div>
+      <h3>技术驱动</h3>
+      <p>深耕现代前端技术栈，从 React/Vue 到 Node.js 全链路开发，追求极致性能与最优用户体验。</p>
+    </div>
+    <div class="about-card">
+      <div class="card-icon">🎨</div>
+      <h3>设计敏感</h3>
+      <p>对视觉设计有独到理解，能用代码精准还原设计稿，关注微交互、动效与无障碍访问。</p>
+    </div>
+    <div class="about-card">
+      <div class="card-icon">🤝</div>
+      <h3>协作开放</h3>
+      <p>擅长跨角色沟通，习惯 Code Review、技术分享与文档沉淀，相信团队力量大于个人。</p>
+    </div>
+    <div class="about-card">
+      <div class="card-icon">🚀</div>
+      <h3>持续学习</h3>
+      <p>保持对前沿技术的关注，积极探索 AI + 前端、WebAssembly 等方向，学无止境。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Skills ===== -->
+<section class="section" id="skills">
+  <p class="section-label">/ skills</p>
+  <h2 class="section-title">技术栈</h2>
+
+  <div class="skills-grid">
+    <div class="skill-group">
+      <h4>🖥 前端核心</h4>
+      <div class="skill-tags">
+        <span class="skill-tag">React</span>
+        <span class="skill-tag">Vue 3</span>
+        <span class="skill-tag">TypeScript</span>
+        <span class="skill-tag">Next.js</span>
+        <span class="skill-tag">Tailwind CSS</span>
+        <span class="skill-tag">Web Components</span>
+      </div>
+    </div>
+    <div class="skill-group">
+      <h4>⚙️ 工程化 & 工具</h4>
+      <div class="skill-tags">
+        <span class="skill-tag">Vite</span>
+        <span class="skill-tag">Webpack</span>
+        <span class="skill-tag">ESLint</span>
+        <span class="skill-tag">Prettier</span>
+        <span class="skill-tag">Git</span>
+        <span class="skill-tag">CI/CD</span>
+        <span class="skill-tag">Docker</span>
+      </div>
+    </div>
+    <div class="skill-group">
+      <h4>🔧 后端 & 数据</h4>
+      <div class="skill-tags">
+        <span class="skill-tag">Node.js</span>
+        <span class="skill-tag">Express</span>
+        <span class="skill-tag">MySQL</span>
+        <span class="skill-tag">MongoDB</span>
+        <span class="skill-tag">GraphQL</span>
+        <span class="skill-tag">REST API</span>
+      </div>
+    </div>
+    <div class="skill-group">
+      <h4>🧪 测试 & 性能</h4>
+      <div class="skill-tags">
+        <span class="skill-tag">Vitest</span>
+        <span class="skill-tag">Cypress</span>
+        <span class="skill-tag">Lighthouse</span>
+        <span class="skill-tag">Web Vitals</span>
+        <span class="skill-tag">PWA</span>
+        <span class="skill-tag">SSR/SSG</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Contact ===== -->
+<section class="section" id="contact">
+  <p class="section-label">/ contact</p>
+  <h2 class="section-title">联系我</h2>
+
+  <div class="contact-layout">
+    <div class="contact-info">
+      <div class="contact-item">
+        <div class="ci-icon">📧</div>
+        <div class="ci-text">
+          <strong>电子邮箱</strong>
+          <span>developer@example.com</span>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="ci-icon">💬</div>
+        <div class="ci-text">
+          <strong>微信</strong>
+          <span>扫描右侧二维码添加</span>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="ci-icon">🐙</div>
+        <div class="ci-text">
+          <strong>GitHub</strong>
+          <span>github.com/yourusername</span>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="ci-icon">💼</div>
+        <div class="ci-text">
+          <strong>所在地</strong>
+          <span>中国 · 可远程</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-section">
+      <h3>📱 扫码添加微信</h3>
+      <p>期待与你的交流与合作</p>
+      <div class="qr-code" id="qrcode"></div>
+      <p style="font-size:0.78rem;color:var(--text-secondary);">将你的联系方式编码在此</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer class="footer">
+  <p>Built with <span class="heart">❤</span> &amp; <span style="font-family:var(--font-mono)">code</span> · &copy; 2026 · 保持热爱，奔赴山海</p>
+</footer>
+
+<!-- ===== QR Code Library ===== -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+<script>
+  // 生成二维码 — 把你的微信/联系方式 URL 或文本替换到这里
+  const contactInfo = 'https://example.com/contact';
+  const qrContainer = document.getElementById('qrcode');
+
+  if (typeof QRCode !== 'undefined') {
+    QRCode.toCanvas(contactInfo, {
+      width: 150,
+      margin: 1,
+      color: { dark: '#0a0e14', light: '#ffffff' },
+      errorCorrectionLevel: 'M'
+    }, function (err, canvas) {
+      if (!err && qrContainer) {
+        qrContainer.appendChild(canvas);
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
