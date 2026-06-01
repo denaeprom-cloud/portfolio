@@ -713,9 +713,9 @@
   let running = false;
 
   const MODES = {
-    focus:  { min: 25, label: '专注中...',  cls: 'focus' },
-    short:  { min: 5,  label: '小憩一下...', cls: 'break' },
-    long:   { min: 15, label: '深度休息...', cls: 'break' },
+    focus:  { min: 25, label: '专注ing…',  idle: '准备开干！',    cls: 'focus' },
+    short:  { min: 5,  label: '小憩一下...', idle: '浅浅休息会儿？', cls: 'break' },
+    long:   { min: 15, label: '嘻嘻~~休息ing~~', idle: '好累呀。。。',    cls: 'break' },
   };
 
   // ===== AUDIO =====
@@ -786,7 +786,7 @@
 
   function updateLabel() {
     const cfg = MODES[mode];
-    timerLabel.textContent = running ? cfg.label : (mode === 'focus' ? '准备专注' : '准备休息');
+    timerLabel.textContent = running ? cfg.label : cfg.idle;
     timerLabel.className = 'timer-label ' + cfg.cls;
   }
 
