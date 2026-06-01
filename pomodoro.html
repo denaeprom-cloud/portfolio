@@ -1061,12 +1061,18 @@
     return _audioCtx;
   }
 
+  // ===== HAPTIC =====
+  function buzz(pattern) {
+    try { if (navigator.vibrate) navigator.vibrate(pattern); } catch(e) {}
+  }
+
   function toggleMute() {
     muted = !muted;
     const btn = document.getElementById('muteBtn');
     btn.textContent = muted ? '🔇' : '🔊';
     btn.className = 'mute-btn' + (muted ? ' muted' : ' unmuted');
-    if (!muted) playClick(); // feedback that sound is back
+    buzz(15);
+    if (!muted) playClick();
   }
 
   function _tone(freq, type, vol, start, dur, glide) {
@@ -1091,6 +1097,7 @@
   // Cute button click
   function playClick() {
     if (muted) return;
+    buzz(10);
     const t = _getCtx().currentTime;
     _tone(1200, 'sine', 0.12, t, 0.08, -200);
   }
@@ -1098,6 +1105,7 @@
   // Cheerful start ding
   function playStart() {
     if (muted) return;
+    buzz([30, 50, 30]);
     const t = _getCtx().currentTime;
     _tone(660, 'sine', 0.18, t, 0.12, 300);
     _tone(990, 'sine', 0.10, t + 0.06, 0.1, 200);
@@ -1106,6 +1114,7 @@
   // Soft pause pop
   function playPause() {
     if (muted) return;
+    buzz(20);
     const t = _getCtx().currentTime;
     _tone(440, 'sine', 0.13, t, 0.1, -200);
     _tone(280, 'sine', 0.08, t + 0.04, 0.08, -80);
@@ -1114,6 +1123,7 @@
   // Happy task done boop
   function playTaskDone() {
     if (muted) return;
+    buzz([40, 30, 40, 30, 40]);
     const t = _getCtx().currentTime;
     _tone(880, 'sine', 0.15, t, 0.1, 400);
     _tone(1320, 'sine', 0.10, t + 0.05, 0.08, 200);
@@ -1122,6 +1132,7 @@
   // Bright task add pop
   function playTaskAdd() {
     if (muted) return;
+    buzz(15);
     const t = _getCtx().currentTime;
     _tone(1040, 'sine', 0.14, t, 0.07, 300);
   }
@@ -1129,12 +1140,14 @@
   // Tiny task delete fwip
   function playTaskDel() {
     if (muted) return;
+    buzz([10, 30, 10]);
     const t = _getCtx().currentTime;
     _tone(600, 'triangle', 0.10, t, 0.06, -300);
   }
 
   function playBeep() {
     if (muted) return;
+    buzz([200, 100, 200, 100, 400]);
     try {
       const ctx = _getCtx();
       [0, 0.15, 0.3].forEach((delay, i) => {
