@@ -222,7 +222,10 @@
     transition: stroke 0.5s, stroke-width 0.6s cubic-bezier(0.25, 0.1, 0.25, 1), filter 0.6s ease-out;
   }
 
-  .ring-progress.break { stroke: var(--green); }
+  /* Per-theme ring stroke (uses SVG gradients) */
+  body[data-theme="focus"] .ring-progress { stroke: url(#gradFocus); }
+  body[data-theme="short"] .ring-progress { stroke: url(#gradShort); }
+  body[data-theme="long"]  .ring-progress { stroke: url(#gradLong); }
 
   /* ===== Lead Dot ===== */
   .lead-dot {
@@ -234,7 +237,7 @@
     transition: opacity 0.6s ease-out, stroke 0.5s, r 0.4s ease-out;
   }
 
-  body[data-theme="short"] .lead-dot { stroke: #7EC8E8; fill: #F5FAFD; }
+  body[data-theme="short"] .lead-dot { stroke: #FFB3A7; fill: #FFF5F5; }
   body[data-theme="long"]  .lead-dot { stroke: #7ECB9A; fill: #F5FFF8; }
 
   .ring-container.running .lead-dot { opacity: 1; }
@@ -1057,7 +1060,7 @@
     const gradMap = { focus: 'url(#gradFocus)', short: 'url(#gradShort)', long: 'url(#gradLong)' };
     ringCircle.setAttribute('stroke', gradMap[mode]);
     ringCircle.classList.toggle('break', mode !== 'focus');
-    leadDot.setAttribute('stroke', mode === 'focus' ? '#5B8FFF' : mode === 'short' ? '#7EC8E8' : '#7ECB9A');
+    leadDot.setAttribute('stroke', mode === 'focus' ? '#5B8FFF' : mode === 'short' ? '#FFB3A7' : '#7ECB9A');
 
     btnStart.textContent = '▶ 开始';
     btnStart.classList.remove('running');
@@ -1231,7 +1234,7 @@
   // ===== DECORATIONS =====
   const DECOS = {
     focus: ['💪','🔥','⚡','🎯','🏆','🚀','💥','⭐','🌟','✨'],
-    short: ['☁️','🫧','💎','🐳','🌊','✨','🦋','☀️','🪽','💙'],
+    short: ['🌸','🎀','🧸','🍰','🫧','💖','🌷','🍪','🐣','💝'],
     long:  ['🌿','🍃','🌱','🦋','🌺','💚','🍀','🌈','☁️','🫧'],
   };
 
