@@ -765,6 +765,16 @@
     color: var(--text-dim);
     font-weight: 600;
     min-width: 28px;
+    cursor: default;
+    transition: transform 0.2s;
+  }
+
+  .history-day.has-data {
+    cursor: pointer;
+  }
+
+  .history-day.has-data:hover {
+    transform: translateY(-3px);
   }
 
   .history-bar {
@@ -778,6 +788,108 @@
   .history-bar.active { background: var(--accent); }
   .history-day.today .history-bar { background: #FFB3A7; }
   .history-day.today { color: #E8897C; font-weight: 800; }
+
+  /* ===== Day Detail Popup ===== */
+  .day-detail-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(90, 55, 40, 0.25);
+    z-index: 400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+    backdrop-filter: blur(4px);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .day-detail-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 1.6rem;
+    width: 90%;
+    max-width: 320px;
+    box-shadow: 0 12px 40px rgba(140, 100, 70, 0.2);
+    animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .dd-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .dd-date {
+    font-weight: 800;
+    font-size: 1rem;
+    color: #5C3D2E;
+  }
+
+  .dd-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: #F5EAE4;
+    color: #8B6F5E;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .dd-close:hover { background: #FFE0D8; color: #E8897C; }
+
+  .dd-stats {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: #8B6F5E;
+  }
+
+  .dd-stats b { color: #5C3D2E; }
+
+  .dd-tasks-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #5C3D2E;
+    margin-bottom: 0.6rem;
+    padding-top: 0.8rem;
+    border-top: 2px solid #F5EAE4;
+  }
+
+  .dd-task {
+    padding: 0.45rem 0.7rem;
+    margin-bottom: 0.35rem;
+    background: #FFFAF8;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    color: #5C3D2E;
+    font-weight: 600;
+  }
+
+  .dd-empty {
+    color: #D0C4BC;
+    font-size: 0.82rem;
+    text-align: center;
+    padding: 1rem 0;
+  }
 
   /* ===== Notification hint ===== */
   .notify-hint {
@@ -1455,6 +1567,8 @@
     saveTasks(tasks);
     renderTasks();
     renderStats();
+    saveDailySnapshot();
+    renderHistory();
     if (t.done) { playTaskDone(); spawnConfetti(); }
     else { playClick(); }
   }
@@ -1466,6 +1580,8 @@
     saveTasks(tasks);
     renderTasks();
     renderStats();
+    saveDailySnapshot();
+    renderHistory();
   }
 
   function renderTasks() {
@@ -1513,6 +1629,7 @@
 
   // ===== HISTORY =====
   function getHistory() {
+    // Returns { "date": { pomos: N, minutes: N, tasksDone: N, tasks: [...] } }
     try {
       const raw = localStorage.getItem('pomodoro_history');
       return JSON.parse(raw) || {};
@@ -1523,17 +1640,29 @@
     localStorage.setItem('pomodoro_history', JSON.stringify(h));
   }
 
+  function saveDailySnapshot() {
+    const today = new Date().toISOString().slice(0, 10);
+    const ss = getTodayStats();
+    const tasks = getTasks();
+    const doneTasks = tasks.filter(t => t.done).map(t => t.text);
+    const h = getHistory();
+    h[today] = {
+      pomos: ss.completedPomodoros,
+      minutes: ss.totalFocusMinutes,
+      tasksDone: doneTasks.length,
+      tasksTotal: tasks.length,
+      tasks: doneTasks,
+    };
+    saveHistory(h);
+  }
+
   function recordPomodoro() {
     const s = getTodayStats();
     s.completedPomodoros++;
     s.totalFocusMinutes += MODES.focus.min;
     saveStats(s);
 
-    // Also save to history
-    const h = getHistory();
-    h[s.date] = s.completedPomodoros;
-    saveHistory(h);
-
+    saveDailySnapshot();
     renderStats();
     renderHistory();
   }
@@ -1547,24 +1676,74 @@
       const d = new Date();
       d.setDate(d.getDate() - i);
       const key = d.toISOString().slice(0, 10);
+      const entry = h[key];
+      const count = (entry && entry.pomos) ? entry.pomos : (typeof entry === 'number' ? entry : 0);
       days.push({
         date: key,
         label: ['日','一','二','三','四','五','六'][d.getDay()],
-        count: h[key] || 0,
+        count,
+        hasData: count > 0 || (entry && entry.tasksDone > 0),
         isToday: i === 0,
       });
     }
     const max = Math.max(1, ...days.map(d => d.count));
     strip.innerHTML = days.map(d => {
-      const h = Math.max(4, (d.count / max) * 40);
-      return `<div class="history-day${d.isToday ? ' today' : ''}">
-        <div class="history-bar${d.count > 0 ? ' active' : ''}" style="height:${h}px;"></div>
+      const barH = Math.max(4, (d.count / max) * 40);
+      return `<div class="history-day${d.isToday ? ' today' : ''}${d.hasData ? ' has-data' : ''}"
+          onclick="showDayDetail('${d.date}')" title="点击查看详情">
+        <div class="history-bar${d.count > 0 ? ' active' : ''}" style="height:${barH}px;"></div>
         ${d.label}
       </div>`;
     }).join('');
   }
 
-  // ===== KEYBOARD SHORTCUT =====
+  // ===== DAY DETAIL POPUP =====
+  function showDayDetail(dateStr) {
+    const h = getHistory();
+    const entry = h[dateStr];
+    const count = (entry && entry.pomos) ? entry.pomos : (typeof entry === 'number' ? entry : 0);
+    const minutes = (entry && entry.minutes) || count * 25;
+    const doneTasks = (entry && entry.tasks) || [];
+    const tasksDone = doneTasks.length;
+    const tasksTotal = (entry && entry.tasksTotal) || tasksDone;
+
+    const d = new Date(dateStr + 'T00:00:00');
+    const weekday = ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+    const month = d.getMonth() + 1;
+    const day = d.getDate();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'day-detail-overlay';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    let tasksHtml = '<div class="dd-empty">这天还没有记录哦~</div>';
+    if (doneTasks.length > 0) {
+      tasksHtml = doneTasks.map(t =>
+        `<div class="dd-task">🌸 ${escapeHtml(t)}</div>`
+      ).join('');
+    }
+
+    overlay.innerHTML = `
+      <div class="day-detail-card">
+        <div class="dd-header">
+          <span class="dd-date">📅 ${month}月${day}日 ${weekday}</span>
+          <button class="dd-close" onclick="this.closest('.day-detail-overlay').remove()">✕</button>
+        </div>
+        <div class="dd-stats">
+          <span>🍅 <b>${count}</b> 番茄</span>
+          <span>⏱ <b>${minutes}</b> 分钟</span>
+          <span>✅ <b>${tasksDone}/${tasksTotal}</b> 任务</span>
+        </div>
+        <div class="dd-tasks-title">📋 完成的待办</div>
+        ${tasksHtml}
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Close with Escape
+    const escHandler = (e) => { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', escHandler); } };
+    document.addEventListener('keydown', escHandler);
+  }
   document.addEventListener('keydown', e => {
     if (e.code === 'Space' && document.activeElement !== taskInput) {
       e.preventDefault();
