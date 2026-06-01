@@ -39,31 +39,55 @@
     justify-content: center;
     overflow: hidden;
     background-image:
-      radial-gradient(circle at 20% 20%, #FFF0EB 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, #FFF5F8 0%, transparent 50%),
-      radial-gradient(circle at 50% 50%, #FFFAF5 0%, transparent 60%);
+      radial-gradient(ellipse 280px 200px at 15% 10%, #FFE8E0 0%, transparent 70%),
+      radial-gradient(ellipse 200px 300px at 85% 90%, #FFF0EB 0%, transparent 70%),
+      radial-gradient(ellipse 240px 180px at 90% 5%, #FFEFEF 0%, transparent 70%),
+      radial-gradient(ellipse 180px 240px at 5% 85%, #FFF5F0 0%, transparent 70%),
+      radial-gradient(ellipse 300px 160px at 50% 50%, #FFFAF5 0%, transparent 60%);
   }
 
-  /* Floating cute dots */
-  body::before {
-    content: '';
+  /* ===== Floating Decorations ===== */
+  .bg-decorations {
     position: fixed;
-    inset: -100px;
-    background-image:
-      radial-gradient(circle 4px, #FFD4C4 30%, transparent 30%),
-      radial-gradient(circle 6px, #FFE0D0 30%, transparent 30%),
-      radial-gradient(circle 3px, #FFD0D0 30%, transparent 30%);
-    background-size: 120px 120px, 180px 180px, 140px 140px;
-    background-position: 0 0, 60px 40px, 90px 20px;
+    inset: 0;
     pointer-events: none;
-    opacity: 0.5;
-    animation: floatDots 20s linear infinite;
+    z-index: 0;
   }
 
-  @keyframes floatDots {
-    0% { transform: translate(0, 0); }
-    100% { transform: translate(60px, 40px); }
+  .deco {
+    position: absolute;
+    animation: floatAround 18s ease-in-out infinite;
+    opacity: 0.55;
   }
+
+  .deco:nth-child(1)  { top: 5%; left: 8%; font-size: 2.2rem; animation-delay: 0s; animation-duration: 16s; }
+  .deco:nth-child(2)  { top: 12%; right: 6%; font-size: 1.6rem; animation-delay: -4s; animation-duration: 20s; }
+  .deco:nth-child(3)  { top: 75%; left: 4%; font-size: 2.8rem; animation-delay: -8s; animation-duration: 19s; }
+  .deco:nth-child(4)  { top: 82%; right: 10%; font-size: 1.8rem; animation-delay: -12s; animation-duration: 22s; }
+  .deco:nth-child(5)  { top: 35%; left: 92%; font-size: 2.0rem; animation-delay: -3s; animation-duration: 17s; }
+  .deco:nth-child(6)  { top: 55%; left: 2%; font-size: 1.4rem; animation-delay: -15s; animation-duration: 21s; }
+  .deco:nth-child(7)  { top: 48%; right: 3%; font-size: 2.4rem; animation-delay: -7s; animation-duration: 18s; }
+  .deco:nth-child(8)  { top: 22%; left: 45%; font-size: 1.3rem; animation-delay: -10s; animation-duration: 23s; }
+  .deco:nth-child(9)  { top: 68%; left: 55%; font-size: 1.9rem; animation-delay: -2s; animation-duration: 20s; }
+  .deco:nth-child(10) { top: 90%; left: 40%; font-size: 2.5rem; animation-delay: -13s; animation-duration: 24s; }
+
+  @keyframes floatAround {
+    0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
+    25%  { transform: translate(18px, -22px) rotate(5deg) scale(1.15); }
+    50%  { transform: translate(-10px, -8px) rotate(-3deg) scale(0.9); }
+    75%  { transform: translate(-20px, 16px) rotate(4deg) scale(1.1); }
+    100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  }
+
+  /* Curvy corner lines */
+  .corner-line {
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.25;
+  }
+  .corner-line.tl { top: -20px; left: -10px; }
+  .corner-line.br { bottom: -10px; right: -10px; transform: rotate(180deg); }
 
   /* ===== App Shell ===== */
   .app {
@@ -506,6 +530,23 @@
 </style>
 </head>
 <body>
+
+<!-- Floating cute decorations -->
+<div class="bg-decorations">
+  <span class="deco">🌸</span>
+  <span class="deco">⭐</span>
+  <span class="deco">🍀</span>
+  <span class="deco">💫</span>
+  <span class="deco">🎀</span>
+  <span class="deco">🌷</span>
+  <span class="deco">✨</span>
+  <span class="deco">🧸</span>
+  <span class="deco">🍰</span>
+  <span class="deco">🫧</span>
+</div>
+
+<svg class="corner-line tl" width="140" height="140" viewBox="0 0 140 140"><path d="M0 70 Q0 0 70 0" fill="none" stroke="#FFD4C4" stroke-width="3" stroke-linecap="round"/><path d="M0 100 Q0 0 100 0" fill="none" stroke="#FFE0D0" stroke-width="2" stroke-linecap="round" opacity="0.6"/></svg>
+<svg class="corner-line br" width="140" height="140" viewBox="0 0 140 140"><path d="M0 70 Q0 0 70 0" fill="none" stroke="#FFD4C4" stroke-width="3" stroke-linecap="round"/><path d="M0 100 Q0 0 100 0" fill="none" stroke="#FFE0D0" stroke-width="2" stroke-linecap="round" opacity="0.6"/></svg>
 
 <div class="app">
   <!-- ===== Timer Panel ===== -->
