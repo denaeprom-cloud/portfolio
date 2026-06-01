@@ -512,6 +512,79 @@
     100% { transform: scale(1.6) rotate(0deg); opacity: 0; }
   }
 
+  /* ===== Confetti ===== */
+  .confetti-piece {
+    position: fixed;
+    pointer-events: none;
+    z-index: 200;
+    animation: confettiFall 1.2s ease-in forwards;
+  }
+
+  @keyframes confettiFall {
+    0%   { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.3); opacity: 0; }
+  }
+
+  /* ===== History Strip ===== */
+  .history-strip {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+    padding-top: 0.7rem;
+  }
+
+  .history-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    font-weight: 600;
+    min-width: 28px;
+  }
+
+  .history-bar {
+    width: 20px;
+    min-height: 4px;
+    border-radius: 10px;
+    background: #F0E0D6;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .history-bar.active { background: var(--accent); }
+  .history-day.today .history-bar { background: #FFB3A7; }
+  .history-day.today { color: #E8897C; font-weight: 800; }
+
+  /* ===== Notification hint ===== */
+  .notify-hint {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    color: #5C3D2E;
+    padding: 0.6rem 1.4rem;
+    border-radius: 50px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    box-shadow: 0 6px 24px rgba(180,140,120,0.18);
+    z-index: 300;
+    animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+               fadeAway 0.3s 2s ease forwards;
+    pointer-events: none;
+  }
+
+  @keyframes slideDown {
+    from { transform: translateX(-50%) translateY(-40px); opacity: 0; }
+    to   { transform: translateX(-50%) translateY(0); opacity: 1; }
+  }
+
+  @keyframes fadeAway {
+    to { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  }
+
   /* ===== Responsive ===== */
   @media (max-width: 700px) {
     body { align-items: flex-start; overflow-y: auto; }
@@ -580,6 +653,9 @@
       <span>⏱ <span class="stat-val" id="statMinutes">0</span> 分钟</span>
       <span>✅ <span class="stat-val" id="statTasks">0</span> 任务</span>
     </div>
+
+    <div class="history-strip" id="historyStrip"></div>
+    <div style="font-size:0.65rem;color:#D0C4BC;margin-top:2px;">按 空格键 快速开始/暂停</div>
   </div>
 
   <!-- ===== Task Panel ===== -->
@@ -711,10 +787,18 @@
     updateTitle();
   }
 
+  // ===== NOTIFICATION =====
+  function notify(msg) {
+    if (Notification.permission === 'granted') {
+      new Notification('🍅 土土时钟', { body: msg, icon: '🍅' });
+    }
+  }
+
   function complete() {
     pauseTimer();
     playBeep();
     showBurst();
+    notify(mode === 'focus' ? '专注完成！休息一下吧~' : '休息结束，继续加油！');
 
     if (mode === 'focus') {
       recordPomodoro();
@@ -843,7 +927,12 @@
   function toggleTask(id) {
     const tasks = getTasks();
     const t = tasks.find(t => t.id === id);
-    if (t) { t.done = !t.done; saveTasks(tasks); renderTasks(); renderStats(); }
+    if (!t) return;
+    t.done = !t.done;
+    saveTasks(tasks);
+    renderTasks();
+    renderStats();
+    if (t.done) spawnConfetti();
   }
 
   function deleteTask(id) {
@@ -875,11 +964,102 @@
     return div.innerHTML;
   }
 
+  // ===== CONFETTI =====
+  function spawnConfetti() {
+    const emojis = ['⭐','🌟','✨','🎀','💖','🌸','🫧','🍀','💫','🎯'];
+    for (let i = 0; i < 18; i++) {
+      const el = document.createElement('span');
+      el.className = 'confetti-piece';
+      el.textContent = emojis[i % emojis.length];
+      el.style.cssText = `
+        left: ${50 + (Math.random()-0.5)*40}%;
+        top: ${45 + (Math.random()-0.5)*30}%;
+        --dx: ${(Math.random()-0.5)*300}px;
+        --dy: ${Math.random()*200 + 80}px;
+        --rot: ${(Math.random()-0.5)*720}deg;
+        font-size: ${0.7 + Math.random()*1.4}rem;
+        animation-delay: ${Math.random()*0.3}s;
+        animation-duration: ${0.8 + Math.random()*1}s;
+      `;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1500);
+    }
+  }
+
+  // ===== HISTORY =====
+  function getHistory() {
+    try {
+      const raw = localStorage.getItem('pomodoro_history');
+      return JSON.parse(raw) || {};
+    } catch(e) { return {}; }
+  }
+
+  function saveHistory(h) {
+    localStorage.setItem('pomodoro_history', JSON.stringify(h));
+  }
+
+  function recordPomodoro() {
+    const s = getTodayStats();
+    s.completedPomodoros++;
+    s.totalFocusMinutes += MODES.focus.min;
+    saveStats(s);
+
+    // Also save to history
+    const h = getHistory();
+    h[s.date] = s.completedPomodoros;
+    saveHistory(h);
+
+    renderStats();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const strip = document.getElementById('historyStrip');
+    if (!strip) return;
+    const h = getHistory();
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      days.push({
+        date: key,
+        label: ['日','一','二','三','四','五','六'][d.getDay()],
+        count: h[key] || 0,
+        isToday: i === 0,
+      });
+    }
+    const max = Math.max(1, ...days.map(d => d.count));
+    strip.innerHTML = days.map(d => {
+      const h = Math.max(4, (d.count / max) * 40);
+      return `<div class="history-day${d.isToday ? ' today' : ''}">
+        <div class="history-bar${d.count > 0 ? ' active' : ''}" style="height:${h}px;"></div>
+        ${d.label}
+      </div>`;
+    }).join('');
+  }
+
+  // ===== KEYBOARD SHORTCUT =====
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && document.activeElement !== taskInput) {
+      e.preventDefault();
+      toggleTimer();
+    }
+  });
+
+  // Request notification permission on first interaction
+  document.addEventListener('click', () => {
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, { once: true });
+
   // ===== INIT =====
   ringCircle.style.strokeDasharray = CIRCUMFERENCE;
   ringCircle.style.strokeDashoffset = '0';
   renderTasks();
   renderStats();
+  renderHistory();
   updateDisplay();
 </script>
 </body>
