@@ -197,6 +197,7 @@
     width: 240px;
     height: 240px;
     flex-shrink: 0;
+    transition: transform 1s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 
   .ring-svg {
@@ -216,7 +217,7 @@
     stroke: var(--accent);
     stroke-width: 8;
     stroke-linecap: round;
-    transition: stroke 0.5s, stroke-width 0.3s;
+    transition: stroke 0.5s, stroke-width 0.6s cubic-bezier(0.25, 0.1, 0.25, 1), filter 0.6s ease-out;
   }
 
   .ring-progress.break { stroke: var(--green); }
@@ -228,7 +229,7 @@
     stroke-width: 3;
     filter: drop-shadow(0 0 8px rgba(255,140,140,0.6));
     opacity: 0;
-    transition: opacity 0.3s, stroke 0.5s;
+    transition: opacity 0.6s ease-out, stroke 0.5s, r 0.4s ease-out;
   }
 
   body[data-theme="short"] .lead-dot { stroke: #FF9A9E; fill: #FFF5F5; }
@@ -242,6 +243,7 @@
     stroke: rgba(88,130,255,0.3);
     stroke-width: 2;
     opacity: 0;
+    transition: opacity 0.5s ease-out;
   }
 
   body[data-theme="focus"] .ring-container.running .ripple-ring {
@@ -260,6 +262,7 @@
   .sparkle {
     fill: #fff;
     opacity: 0;
+    transition: opacity 0.6s ease-out;
   }
 
   .ring-container.running .sparkle {
