@@ -109,6 +109,18 @@
     border-color: #F0E8E0;
   }
 
+  /* ===== Cute Title ===== */
+  .cute-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #E8897C;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #FFB3A7, #FFA0C8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   /* ===== Timer Ring ===== */
   .ring-container {
     position: relative;
@@ -498,10 +510,11 @@
 <div class="app">
   <!-- ===== Timer Panel ===== -->
   <div class="timer-panel">
+    <div class="cute-title">🧸 土土时钟</div>
     <div class="phase-pills" id="phasePills">
-      <button class="phase-pill active" data-mode="focus" data-min="25">🍅 专注 25</button>
-      <button class="phase-pill" data-mode="short" data-min="5">☕ 小休 5</button>
-      <button class="phase-pill" data-mode="long" data-min="15">🌿 长休 15</button>
+      <button class="phase-pill active" data-mode="focus" data-min="25">🍅 专注</button>
+      <button class="phase-pill" data-mode="short" data-min="5">☕ 小休</button>
+      <button class="phase-pill" data-mode="long" data-min="15">🌿 长休</button>
     </div>
 
     <div class="ring-container">
