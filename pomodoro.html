@@ -38,12 +38,45 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    transition: background 0.8s ease;
     background-image:
       radial-gradient(ellipse 280px 200px at 15% 10%, #FFE8E0 0%, transparent 70%),
       radial-gradient(ellipse 200px 300px at 85% 90%, #FFF0EB 0%, transparent 70%),
       radial-gradient(ellipse 240px 180px at 90% 5%, #FFEFEF 0%, transparent 70%),
       radial-gradient(ellipse 180px 240px at 5% 85%, #FFF5F0 0%, transparent 70%),
       radial-gradient(ellipse 300px 160px at 50% 50%, #FFFAF5 0%, transparent 60%);
+    transition: background-color 0.8s ease, background-image 0.8s ease;
+  }
+
+  /* ===== Themed Backgrounds ===== */
+  body[data-theme="focus"] {
+    background-color: #F0F5FF;
+    background-image:
+      radial-gradient(ellipse 300px 200px at 20% 15%, #E0ECFF 0%, transparent 65%),
+      radial-gradient(ellipse 220px 280px at 80% 85%, #E8F0FE 0%, transparent 65%),
+      radial-gradient(ellipse 260px 180px at 85% 8%, #DCE8FF 0%, transparent 65%),
+      radial-gradient(ellipse 200px 200px at 10% 80%, #EEF3FF 0%, transparent 65%),
+      radial-gradient(ellipse 320px 140px at 50% 50%, #F5F8FF 0%, transparent 55%);
+  }
+
+  body[data-theme="short"] {
+    background-color: #FFF0F0;
+    background-image:
+      radial-gradient(ellipse 280px 200px at 18% 12%, #FFE0E0 0%, transparent 65%),
+      radial-gradient(ellipse 200px 260px at 82% 88%, #FFE8E8 0%, transparent 65%),
+      radial-gradient(ellipse 240px 160px at 88% 6%, #FFDCDC 0%, transparent 65%),
+      radial-gradient(ellipse 190px 220px at 8% 82%, #FFEFEF 0%, transparent 65%),
+      radial-gradient(ellipse 300px 150px at 48% 48%, #FFF5F5 0%, transparent 55%);
+  }
+
+  body[data-theme="long"] {
+    background-color: #F0FFF4;
+    background-image:
+      radial-gradient(ellipse 280px 200px at 16% 13%, #DCF5E4 0%, transparent 65%),
+      radial-gradient(ellipse 210px 270px at 84% 86%, #E0F8E8 0%, transparent 65%),
+      radial-gradient(ellipse 250px 170px at 86% 7%, #D8F4E0 0%, transparent 65%),
+      radial-gradient(ellipse 180px 230px at 6% 84%, #ECFAF0 0%, transparent 65%),
+      radial-gradient(ellipse 310px 145px at 50% 50%, #F5FFF8 0%, transparent 55%);
   }
 
   /* ===== Floating Decorations ===== */
@@ -85,9 +118,11 @@
     pointer-events: none;
     z-index: 0;
     opacity: 0.25;
+    transition: opacity 0.8s;
   }
   .corner-line.tl { top: -20px; left: -10px; }
   .corner-line.br { bottom: -10px; right: -10px; transform: rotate(180deg); }
+  body[data-theme="long"] .corner-line { opacity: 0.3; }
 
   /* ===== App Shell ===== */
   .app {
@@ -605,18 +640,7 @@
 <body>
 
 <!-- Floating cute decorations -->
-<div class="bg-decorations">
-  <span class="deco">🌸</span>
-  <span class="deco">⭐</span>
-  <span class="deco">🍀</span>
-  <span class="deco">💫</span>
-  <span class="deco">🎀</span>
-  <span class="deco">🌷</span>
-  <span class="deco">✨</span>
-  <span class="deco">🧸</span>
-  <span class="deco">🍰</span>
-  <span class="deco">🫧</span>
-</div>
+<div class="bg-decorations" id="bgDecorations"></div>
 
 <svg class="corner-line tl" width="140" height="140" viewBox="0 0 140 140"><path d="M0 70 Q0 0 70 0" fill="none" stroke="#FFD4C4" stroke-width="3" stroke-linecap="round"/><path d="M0 100 Q0 0 100 0" fill="none" stroke="#FFE0D0" stroke-width="2" stroke-linecap="round" opacity="0.6"/></svg>
 <svg class="corner-line br" width="140" height="140" viewBox="0 0 140 140"><path d="M0 70 Q0 0 70 0" fill="none" stroke="#FFD4C4" stroke-width="3" stroke-linecap="round"/><path d="M0 100 Q0 0 100 0" fill="none" stroke="#FFE0D0" stroke-width="2" stroke-linecap="round" opacity="0.6"/></svg>
@@ -737,6 +761,10 @@
     updateLabel();
     updatePhasePills();
 
+    // Update theme
+    document.body.setAttribute('data-theme', mode);
+    renderDecorations();
+
     // Reset ring color class
     ringCircle.classList.toggle('break', mode !== 'focus');
     btnStart.textContent = '▶ 开始';
@@ -855,6 +883,22 @@
     el.innerHTML = `<div class="burst-text">${mode === 'focus' ? '🍅' : '☕'}</div>`;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 1300);
+  }
+
+  // ===== DECORATIONS =====
+  const DECOS = {
+    focus: ['💪','🔥','⚡','🎯','🏆','🚀','💥','⭐','🌟','✨'],
+    short: ['🌸','🎀','🧸','🍰','🫧','💖','🌷','🍪','🐣','💝'],
+    long:  ['🌿','🍃','🌱','🦋','🌺','💚','🍀','🌈','☁️','🫧'],
+  };
+
+  function renderDecorations() {
+    const container = document.getElementById('bgDecorations');
+    if (!container) return;
+    const emojis = DECOS[mode] || DECOS.short;
+    container.innerHTML = emojis.map((e, i) =>
+      `<span class="deco">${e}</span>`
+    ).join('');
   }
 
   // ===== PHASE PILLS =====
@@ -1057,6 +1101,8 @@
   // ===== INIT =====
   ringCircle.style.strokeDasharray = CIRCUMFERENCE;
   ringCircle.style.strokeDashoffset = '0';
+  document.body.setAttribute('data-theme', 'focus');
+  renderDecorations();
   renderTasks();
   renderStats();
   renderHistory();
