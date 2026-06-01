@@ -1149,6 +1149,13 @@
   const taskList = document.getElementById('taskList');
   const taskInput = document.getElementById('taskInput');
 
+  // ===== MODE CONFIG =====
+  const MODES = {
+    focus:  { min: 40, label: '专注ing…',  idle: '准备开干！',    cls: 'focus' },
+    short:  { min: 5,  label: '小憩一下...', idle: '浅浅休息会儿？', cls: 'break' },
+    long:   { min: 15, label: '嘻嘻~~休息ing~~', idle: '好累呀。。。',    cls: 'break' },
+  };
+
   // ===== STATE =====
   let mode = 'focus';        // 'focus' | 'short' | 'long'
   let totalSeconds = MODES.focus.min * 60;
@@ -1157,12 +1164,6 @@
   let rotInterval = null;
   let rotDeg = 0;
   let running = false;
-
-  const MODES = {
-    focus:  { min: 40, label: '专注ing…',  idle: '准备开干！',    cls: 'focus' },
-    short:  { min: 5,  label: '小憩一下...', idle: '浅浅休息会儿？', cls: 'break' },
-    long:   { min: 15, label: '嘻嘻~~休息ing~~', idle: '好累呀。。。',    cls: 'break' },
-  };
 
   // ===== AUDIO =====
   let muted = false;
