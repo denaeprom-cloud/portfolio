@@ -58,7 +58,6 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    overscroll-behavior-x: none; /* block Chrome back-swipe */
     transition: background 0.8s ease;
     background-image:
       radial-gradient(ellipse 280px 200px at 15% 10%, #FFE8E0 0%, transparent 70%),
@@ -2134,46 +2133,6 @@
     }
   });
 
-  // ===== SWIPE GESTURE =====
-  const MODE_ORDER = ['focus', 'short', 'long'];
-  const MODE_LABEL = { focus: '专注', short: '小休', long: '长休' };
-  const app = document.querySelector('.app');
-  let sX = 0, sDX = 0, tracking = false;
-  const THRESHOLD = 70;
-
-  // Hint pill
-  const pill = document.createElement('div');
-  pill.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:60;padding:4px 16px;border-radius:50px;font-size:0.75rem;font-weight:700;pointer-events:none;opacity:0;transition:opacity 0.15s;background:#fff;color:#5C3D2E;box-shadow:0 2px 12px rgba(0,0,0,0.08);';
-  document.body.appendChild(pill);
-
-  document.addEventListener('touchstart', e => {
-    sX = e.touches[0].clientX;
-    sDX = 0;
-    tracking = true;
-  }, { passive: true });
-
-  document.addEventListener('touchmove', e => {
-    if (!tracking) return;
-    sDX = e.touches[0].clientX - sX;
-    if (Math.abs(sDX) > 10) {
-      app.style.transition = 'none';
-      app.style.transform = `translateX(${sDX * 0.5}px)`;
-      const next = sDX < 0 ? MODE_ORDER[(MODE_ORDER.indexOf(mode) + 1) % 3] : MODE_ORDER[(MODE_ORDER.indexOf(mode) + 2) % 3];
-      pill.textContent = `→ ${MODE_LABEL[next]}`;
-      pill.style.opacity = Math.min(1, Math.abs(sDX) / THRESHOLD);
-    }
-  }, { passive: true });
-
-  document.addEventListener('touchend', () => {
-    tracking = false;
-    pill.style.opacity = '0';
-    app.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1)';
-    if (Math.abs(sDX) > THRESHOLD) {
-      const idx = MODE_ORDER.indexOf(mode);
-      setMode(sDX < 0 ? MODE_ORDER[(idx + 1) % 3] : MODE_ORDER[(idx + 2) % 3]);
-    }
-    app.style.transform = '';
-  });
 
   // Request notification permission on first interaction
   document.addEventListener('click', () => {
