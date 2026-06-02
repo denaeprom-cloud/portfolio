@@ -760,6 +760,85 @@
     100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.3); opacity: 0; }
   }
 
+  /* ===== Clear Done Button ===== */
+  .clear-done-btn {
+    padding: 0.4rem;
+    background: #FFF5F5;
+    border: 2px dashed #F0D8D8;
+    border-radius: 12px;
+    color: #C8A0A0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.2s;
+    flex-shrink: 0;
+    text-align: center;
+  }
+  .clear-done-btn:hover { background: #FFECEC; border-color: #E8C0C0; color: #C08080; }
+
+  /* ===== Drag Handle ===== */
+  .drag-handle {
+    color: #D8C8C0;
+    cursor: grab;
+    font-size: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    padding: 0 2px;
+    flex-shrink: 0;
+    transition: color 0.2s;
+  }
+  .drag-handle:active { cursor: grabbing; color: var(--accent); }
+
+  .task-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+    border: 2px dashed #F0D0D0;
+  }
+
+  .task-item.drag-over {
+    border-color: var(--accent);
+    background: #FFF5F5;
+    border-style: dashed;
+  }
+
+  /* ===== Monthly Heatmap ===== */
+  .heatmap {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex-shrink: 0;
+    padding-top: 0.35rem;
+  }
+  .heatmap-row {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+  }
+  .heatmap-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background: #F0E8E0;
+    transition: transform 0.2s, background 0.3s;
+    cursor: pointer;
+    position: relative;
+  }
+  .heatmap-cell[data-count="0"] { background: #F5F0EC; }
+  .heatmap-cell[data-count="1"] { background: #FFE0D8; }
+  .heatmap-cell[data-count="2"] { background: #FFC0B4; }
+  .heatmap-cell[data-count="3"] { background: #FFA090; }
+  .heatmap-cell[data-count="4"] { background: #FF8070; }
+  .heatmap-cell:hover { transform: scale(1.4); }
+  .heatmap-label {
+    font-size: 0.6rem;
+    color: #D0C4BC;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 2px;
+  }
+
   /* ===== History Strip ===== */
   .history-strip {
     display: flex;
@@ -926,6 +1005,14 @@
   @keyframes slideDown {
     from { transform: translateX(-50%) translateY(-40px); opacity: 0; }
     to   { transform: translateX(-50%) translateY(0); opacity: 1; }
+  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  @keyframes toastOut {
+    to { opacity: 0; transform: translateX(-50%) translateY(-10px); }
   }
 
   @keyframes fadeAway {
@@ -1213,6 +1300,7 @@
     </div>
 
     <div class="history-strip" id="historyStrip"></div>
+    <div class="heatmap" id="heatmap"></div>
     <div style="font-size:0.65rem;color:#D0C4BC;margin-top:2px;">tips:按 空格键 快速开始/暂停 ~~</div>
 
     <button class="install-btn" id="installBtn" style="display:none;" title="添加到桌面">
@@ -1230,6 +1318,9 @@
     <div class="task-list" id="taskList">
       <div class="task-empty">👑 公主今日的日程</div>
     </div>
+    <button class="clear-done-btn" id="clearDoneBtn" onclick="clearDoneTasks()" style="display:none;">
+      🧹 清除已完成
+    </button>
   </div>
 </div>
 
@@ -1683,12 +1774,19 @@
 
   function renderTasks() {
     const tasks = getTasks();
+    // Show/hide clear button
+    const clearBtn = document.getElementById('clearDoneBtn');
+    const hasDone = tasks.some(t => t.done);
+    if (clearBtn) clearBtn.style.display = hasDone ? 'block' : 'none';
+
     if (!tasks.length) {
       taskList.innerHTML = '<div class="task-empty">👑 公主今日的日程</div>';
       return;
     }
-    taskList.innerHTML = tasks.map(t => `
-      <div class="task-item ${t.done ? 'done' : ''}" data-id="${t.id}">
+    taskList.innerHTML = tasks.map((t, i) => `
+      <div class="task-item ${t.done ? 'done' : ''}" data-id="${t.id}" data-idx="${i}"
+           ontouchstart="dragStart(event, ${i}, '${t.id}')">
+        <span class="drag-handle">⋮⋮</span>
         <div class="task-check" onclick="toggleTask(${t.id})">${t.done ? '✓' : ''}</div>
         <span class="task-text">${escapeHtml(t.text)}</span>
         <button class="task-del" onclick="deleteTask(${t.id})">✕</button>
@@ -1700,6 +1798,107 @@
     const div = document.createElement('div');
     div.textContent = s;
     return div.innerHTML;
+  }
+
+  // ===== DRAG TO REORDER =====
+  let dragIdx = -1, dragOverIdx = -1, dragId = null;
+  let dragY = 0, dragStartY = 0, dragClone = null, dragStarted = false;
+
+  function dragStart(e, idx, id) {
+    dragIdx = idx;
+    dragId = id;
+    dragStartY = e.touches[0].clientY;
+    dragY = dragStartY;
+    dragStarted = false;
+    dragClone = null;
+  }
+
+  document.addEventListener('touchmove', e => {
+    if (dragIdx < 0) return;
+    dragY = e.touches[0].clientY;
+    const dy = dragY - dragStartY;
+    if (!dragStarted && Math.abs(dy) < 12) return; // need 12px to start
+
+    if (!dragStarted) {
+      dragStarted = true;
+      const item = document.querySelector(`.task-item[data-id="${dragId}"]`);
+      if (item) item.classList.add('dragging');
+    }
+    // Find which item we're over
+    const items = [...taskList.querySelectorAll('.task-item:not(.dragging)')];
+    items.forEach(el => el.classList.remove('drag-over'));
+    const over = document.elementFromPoint(e.touches[0].clientX, dragY);
+    const overItem = over ? over.closest('.task-item:not(.dragging)') : null;
+    if (overItem) {
+      overItem.classList.add('drag-over');
+      dragOverIdx = parseInt(overItem.dataset.idx);
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    if (dragIdx < 0) return;
+    if (dragStarted && dragOverIdx >= 0 && dragOverIdx !== dragIdx) {
+      const tasks = getTasks();
+      const [moved] = tasks.splice(dragIdx, 1);
+      tasks.splice(dragOverIdx, 0, moved);
+      saveTasks(tasks);
+      renderTasks();
+    } else {
+      document.querySelectorAll('.task-item.dragging').forEach(el => el.classList.remove('dragging'));
+    }
+    document.querySelectorAll('.task-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+    dragIdx = -1; dragOverIdx = -1; dragId = null; dragStarted = false;
+  });
+
+  // ===== CLEAR DONE TASKS =====
+  function clearDoneTasks() {
+    const tasks = getTasks();
+    const doneCount = tasks.filter(t => t.done).length;
+    if (doneCount === 0) return;
+    const remaining = tasks.filter(t => !t.done);
+    saveTasks(remaining);
+    saveDailySnapshot();
+    renderTasks();
+    renderStats();
+    renderHistory();
+    showToast(`🧹 清除了 ${doneCount} 个已完成任务`);
+  }
+
+  function showToast(msg) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:300;padding:8px 20px;border-radius:50px;background:#5C3D2E;color:#fff;font-size:0.82rem;font-weight:600;pointer-events:none;animation:toastIn 0.4s cubic-bezier(0.34,1.56,0.64,1), toastOut 0.3s 1.5s ease forwards;';
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+  }
+
+  // ===== MONTHLY HEATMAP =====
+  function renderHeatmap() {
+    const container = document.getElementById('heatmap');
+    if (!container) return;
+    const h = getHistory();
+    // Past 4 weeks, start on Monday
+    const today = new Date();
+    const days = [];
+    for (let i = 27; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const entry = h[key];
+      const count = (entry && entry.pomos) ? entry.pomos : (typeof entry === 'number' ? entry : 0);
+      days.push({ date: key, count, day: d.getDay() });
+    }
+    // Layout: rows = Sun..Sat, cols = weeks
+    const WEEKS = 4;
+    const rows = [[], [], [], [], [], [], []]; // Sun=0 .. Sat=6
+    days.forEach(d => rows[d.day].push(d));
+    container.innerHTML = rows.map(row =>
+      '<div class="heatmap-row">' + row.map(d => {
+        const lvl = d.count >= 4 ? 4 : d.count;
+        return `<div class="heatmap-cell" data-count="${lvl}" data-date="${d.date}"
+          onclick="showDayDetail('${d.date}')" title="${d.date}: ${d.count}🍅"></div>`;
+      }).join('') + '</div>'
+    ).join('') + '<div class="heatmap-label">过去4周 🍅</div>';
   }
 
   // ===== CONFETTI =====
@@ -1762,6 +1961,7 @@
     saveDailySnapshot();
     renderStats();
     renderHistory();
+    renderHeatmap();
   }
 
   function renderHistory() {
@@ -1905,6 +2105,7 @@
   renderTasks();
   renderStats();
   renderHistory();
+  renderHeatmap();
   updateDisplay();
 </script>
 <!-- PWA Service Worker -->
