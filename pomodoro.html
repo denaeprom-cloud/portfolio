@@ -7,12 +7,12 @@
 <title>🍅 土土时钟</title>
 
 <!-- PWA -->
-<link rel="manifest" href="/portfolio/manifest.json" id="manifestLink">
+<link rel="manifest" href="/portfolio/manifest.json?v=2">
 <meta name="theme-color" content="#FFF5F0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="土土时钟">
-<link rel="apple-touch-icon" href="#">  <!-- filled by JS -->
+<link rel="apple-touch-icon" href="/portfolio/icon.svg">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1864,67 +1864,6 @@
 </script>
 <!-- PWA Service Worker -->
 <script>
-  // === Generate cute icon via Canvas & inject into manifest ===
-  (function() {
-    function drawIcon(size) {
-      const c = document.createElement('canvas');
-      c.width = c.height = size;
-      const ctx = c.getContext('2d');
-      // Warm cream background with rounded corners
-      const r = size * 0.2;
-      ctx.beginPath();
-      ctx.moveTo(r, 0);
-      ctx.lineTo(size - r, 0);
-      ctx.quadraticCurveTo(size, 0, size, r);
-      ctx.lineTo(size, size - r);
-      ctx.quadraticCurveTo(size, size, size - r, size);
-      ctx.lineTo(r, size);
-      ctx.quadraticCurveTo(0, size, 0, size - r);
-      ctx.lineTo(0, r);
-      ctx.quadraticCurveTo(0, 0, r, 0);
-      ctx.fillStyle = '#FFF5F0';
-      ctx.fill();
-      // Cute tomato emoji as text
-      ctx.font = `${size * 0.55}px serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('🍅', size / 2, size / 2);
-      return c;
-    }
-
-    // Generate and inject icons
-    const sizes = [192, 512];
-    sizes.forEach(s => {
-      const c = drawIcon(s);
-      const url = c.toDataURL('image/png');
-      // Apple touch icon
-      if (s === 192) {
-        const ati = document.querySelector('link[rel="apple-touch-icon"]');
-        if (ati) ati.href = url;
-      }
-      // Inject into manifest via JS
-      const link = document.getElementById('manifestLink');
-      if (link && s === 192) {
-        // Update manifest with icon programmatically
-        const manifest = {
-          name: '土土时钟',
-          short_name: '土土时钟',
-          start_url: '/portfolio/pomodoro.html',
-          display: 'standalone',
-          background_color: '#FFF5F0',
-          theme_color: '#FF8C8C',
-          icons: sizes.map(sz => ({
-            src: drawIcon(sz).toDataURL('image/png'),
-            sizes: `${sz}x${sz}`,
-            type: 'image/png'
-          }))
-        };
-        const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-        link.href = URL.createObjectURL(blob);
-      }
-    });
-  })();
-
   // === Service Worker ===
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/portfolio/sw.js');
