@@ -2,8 +2,16 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🍅 Pomodoro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>🍅 土土时钟</title>
+
+<!-- PWA -->
+<link rel="manifest" href="/portfolio/manifest.json">
+<meta name="theme-color" content="#FFF5F0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="土土时钟">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%23FFF5F0'/><text x='96' y='120' font-size='100' text-anchor='middle'>🍅</text></svg>">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1769,6 +1777,12 @@
   renderStats();
   renderHistory();
   updateDisplay();
+</script>
+<!-- PWA Service Worker -->
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/portfolio/sw.js');
+  }
 </script>
 </body>
 </html>
