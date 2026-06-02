@@ -1850,47 +1850,19 @@
 
   // ===== SWIPE GESTURE =====
   const MODE_ORDER = ['focus', 'short', 'long'];
-  const MODE_LABELS = { focus: '🍅 专注', short: '☕ 小休', long: '🌿 长休' };
-  const app = document.querySelector('.app');
-  let sDX = 0, sX = 0, swiping = false, armed = false;
-  const SWIPE_THRESHOLD = 70;
-
-  const hintEl = document.createElement('div');
-  hintEl.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:50;text-align:center;padding:5px;font-size:0.78rem;font-weight:700;pointer-events:none;opacity:0;transition:opacity 0.2s;background:rgba(255,255,255,0.9);color:#5C3D2E;';
-  document.body.appendChild(hintEl);
+  let sX = 0, sY = 0;
 
   document.addEventListener('touchstart', e => {
-    if (e.target.closest('button, input, .task-check, .task-del, [onclick]')) return;
     sX = e.touches[0].clientX;
-    sDX = 0;
-    armed = true;
-    swiping = false;
+    sY = e.touches[0].clientY;
   }, { passive: true });
 
-  document.addEventListener('touchmove', e => {
-    if (!armed) return;
-    const dx = e.touches[0].clientX - sX;
-    // Once horizontal enough, go for it (touch-action: pan-y handles the rest)
-    if (!swiping && Math.abs(dx) > 15) { swiping = true; app.style.transition = 'none'; }
-    if (!swiping) return;
-    sDX = dx;
-    app.style.transform = `translateX(${dx * 0.5}px)`;
-    const target = dx < 0 ? MODE_ORDER[(MODE_ORDER.indexOf(mode) + 1) % 3] : MODE_ORDER[(MODE_ORDER.indexOf(mode) + 2) % 3];
-    hintEl.textContent = dx < 0 ? `← ${MODE_LABELS[target]}` : `${MODE_LABELS[target]} →`;
-    hintEl.style.opacity = Math.min(1, Math.abs(dx) / SWIPE_THRESHOLD);
-  }, { passive: true });
-
-  document.addEventListener('touchend', () => {
-    armed = false;
-    hintEl.style.opacity = '0';
-    if (!swiping) return;
-    swiping = false;
-    app.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1)';
-    if (Math.abs(sDX) > SWIPE_THRESHOLD) {
-      const idx = MODE_ORDER.indexOf(mode);
-      setMode(MODE_ORDER[sDX < 0 ? (idx + 1) % 3 : (idx + 2) % 3]);
-    }
-    app.style.transform = '';
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - sX;
+    const dy = e.changedTouches[0].clientY - sY;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy)) return;
+    const idx = MODE_ORDER.indexOf(mode);
+    setMode(dx < 0 ? MODE_ORDER[(idx + 1) % 3] : MODE_ORDER[(idx + 2) % 3]);
   });
 
   // Request notification permission on first interaction
