@@ -808,9 +808,31 @@
   }
 
   /* ===== Monthly Calendar ===== */
+  .cal-toggle {
+    background: none;
+    border: none;
+    color: #C0B0A0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font);
+    padding: 0.25rem 0;
+    flex-shrink: 0;
+    transition: color 0.2s;
+  }
+  .cal-toggle:hover { color: var(--accent); }
+  .cal-toggle.open { color: var(--accent); }
+
   .calendar-section {
     flex-shrink: 0;
-    padding-top: 0.5rem;
+    padding-top: 0.3rem;
+    animation: calSlideIn 0.3s ease;
+    overflow: hidden;
+  }
+
+  @keyframes calSlideIn {
+    from { max-height: 0; opacity: 0; }
+    to   { max-height: 300px; opacity: 1; }
   }
   .cal-header {
     display: flex;
@@ -1356,10 +1378,11 @@
       <span>✅ <span class="stat-val" id="statTasks">0</span> 任务</span>
     </div>
 
-    <div class="calendar-section" id="calendarSection">
+    <button class="cal-toggle" id="calToggle" onclick="toggleCalendar()">📅 日程日历 ▸</button>
+    <div class="calendar-section" id="calendarSection" style="display:none;">
       <div class="cal-header">
         <button class="cal-nav" onclick="changeMonth(-1)">◀</button>
-        <span class="cal-month" id="calMonth">6月 2026</span>
+        <span class="cal-month" id="calMonth"></span>
         <button class="cal-nav" onclick="changeMonth(1)">▶</button>
       </div>
       <div class="cal-grid" id="calGrid"></div>
@@ -1868,32 +1891,25 @@
 
   // ===== DRAG TO REORDER =====
   let dragIdx = -1, dragOverIdx = -1, dragId = null;
-  let dragY = 0, dragStartY = 0, dragClone = null, dragStarted = false;
+  let dragStartY = 0, dragStarted = false;
 
   function dragStart(e, idx, id) {
-    dragIdx = idx;
-    dragId = id;
+    dragIdx = idx; dragId = id;
     dragStartY = e.touches[0].clientY;
-    dragY = dragStartY;
     dragStarted = false;
-    dragClone = null;
   }
 
-  document.addEventListener('touchmove', e => {
+  taskList.addEventListener('touchmove', e => {
     if (dragIdx < 0) return;
-    dragY = e.touches[0].clientY;
-    const dy = dragY - dragStartY;
-    if (!dragStarted && Math.abs(dy) < 12) return; // need 12px to start
-
+    const dy = e.touches[0].clientY - dragStartY;
+    if (!dragStarted && Math.abs(dy) < 12) return;
     if (!dragStarted) {
       dragStarted = true;
-      const item = document.querySelector(`.task-item[data-id="${dragId}"]`);
+      const item = taskList.querySelector(`.task-item[data-id="${dragId}"]`);
       if (item) item.classList.add('dragging');
     }
-    // Find which item we're over
-    const items = [...taskList.querySelectorAll('.task-item:not(.dragging)')];
-    items.forEach(el => el.classList.remove('drag-over'));
-    const over = document.elementFromPoint(e.touches[0].clientX, dragY);
+    taskList.querySelectorAll('.task-item:not(.dragging)').forEach(el => el.classList.remove('drag-over'));
+    const over = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
     const overItem = over ? over.closest('.task-item:not(.dragging)') : null;
     if (overItem) {
       overItem.classList.add('drag-over');
@@ -1901,7 +1917,7 @@
     }
   }, { passive: true });
 
-  document.addEventListener('touchend', () => {
+  taskList.addEventListener('touchend', () => {
     if (dragIdx < 0) return;
     if (dragStarted && dragOverIdx >= 0 && dragOverIdx !== dragIdx) {
       const tasks = getTasks();
@@ -1909,10 +1925,8 @@
       tasks.splice(dragOverIdx, 0, moved);
       saveTasks(tasks);
       renderTasks();
-    } else {
-      document.querySelectorAll('.task-item.dragging').forEach(el => el.classList.remove('dragging'));
     }
-    document.querySelectorAll('.task-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+    document.querySelectorAll('.task-item.dragging, .task-item.drag-over').forEach(el => el.classList.remove('dragging', 'drag-over'));
     dragIdx = -1; dragOverIdx = -1; dragId = null; dragStarted = false;
   });
 
@@ -2005,6 +2019,16 @@
   // ===== MONTHLY CALENDAR =====
   let calYear = new Date().getFullYear();
   let calMonth = new Date().getMonth(); // 0-indexed
+
+  function toggleCalendar() {
+    const sec = document.getElementById('calendarSection');
+    const btn = document.getElementById('calToggle');
+    const open = sec.style.display !== 'none';
+    sec.style.display = open ? 'none' : 'block';
+    btn.textContent = open ? '📅 日程日历 ▸' : '📅 日程日历 ▾';
+    btn.classList.toggle('open', !open);
+    if (!open) renderCalendar();
+  }
 
   function changeMonth(delta) {
     calMonth += delta;
