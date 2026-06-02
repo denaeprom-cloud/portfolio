@@ -1,7 +1,8 @@
+
 {
   "name": "土土时钟",
   "short_name": "土土时钟",
-  "start_url": "/portfolio/pomodoro.html?v=2",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FFF5F0",

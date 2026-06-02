@@ -1,8 +1,8 @@
 // Service Worker for 土土时钟 — offline support
 const CACHE = 'pomodoro-v1';
 const FILES = [
-  '/portfolio/pomodoro.html',
-  '/portfolio/manifest.json',
+  './',
+  './manifest.json',
 ];
 
 self.addEventListener('install', e => {
