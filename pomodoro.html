@@ -6,12 +6,12 @@
 <title>🍅 土土时钟</title>
 
 <!-- PWA -->
-<link rel="manifest" href="/portfolio/manifest.json">
+<link rel="manifest" href="/portfolio/manifest.json" id="manifestLink">
 <meta name="theme-color" content="#FFF5F0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="土土时钟">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%23FFF5F0'/><text x='96' y='120' font-size='100' text-anchor='middle'>🍅</text></svg>">
+<link rel="apple-touch-icon" href="#">  <!-- filled by JS -->
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -927,6 +927,38 @@
     to { opacity: 0; transform: translateX(-50%) translateY(-10px); }
   }
 
+  /* ===== Install Button ===== */
+  .install-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1.2rem;
+    background: linear-gradient(135deg, #FF8C8C, #FFB3A7);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font);
+    box-shadow: 0 4px 16px rgba(255, 140, 140, 0.3);
+    animation: floatUpDown 2s ease-in-out infinite;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    align-self: center;
+  }
+
+  .install-btn:hover {
+    box-shadow: 0 6px 24px rgba(255, 140, 140, 0.45);
+    transform: translateY(-2px);
+    animation: none;
+  }
+
+  @keyframes floatUpDown {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-5px); }
+  }
+
   /* ===== Responsive: Tablet ===== */
   @media (max-width: 780px) {
     .app {
@@ -1130,6 +1162,10 @@
 
     <div class="history-strip" id="historyStrip"></div>
     <div style="font-size:0.65rem;color:#D0C4BC;margin-top:2px;">tips:按 空格键 快速开始/暂停 ~~</div>
+
+    <button class="install-btn" id="installBtn" style="display:none;" title="添加到桌面">
+      📲 添加到桌面
+    </button>
   </div>
 
   <!-- ===== Task Panel ===== -->
@@ -1780,9 +1816,97 @@
 </script>
 <!-- PWA Service Worker -->
 <script>
+  // === Generate cute icon via Canvas & inject into manifest ===
+  (function() {
+    function drawIcon(size) {
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const ctx = c.getContext('2d');
+      // Warm cream background with rounded corners
+      const r = size * 0.2;
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.lineTo(size - r, 0);
+      ctx.quadraticCurveTo(size, 0, size, r);
+      ctx.lineTo(size, size - r);
+      ctx.quadraticCurveTo(size, size, size - r, size);
+      ctx.lineTo(r, size);
+      ctx.quadraticCurveTo(0, size, 0, size - r);
+      ctx.lineTo(0, r);
+      ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.fillStyle = '#FFF5F0';
+      ctx.fill();
+      // Cute tomato emoji as text
+      ctx.font = `${size * 0.55}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🍅', size / 2, size / 2);
+      return c;
+    }
+
+    // Generate and inject icons
+    const sizes = [192, 512];
+    sizes.forEach(s => {
+      const c = drawIcon(s);
+      const url = c.toDataURL('image/png');
+      // Apple touch icon
+      if (s === 192) {
+        const ati = document.querySelector('link[rel="apple-touch-icon"]');
+        if (ati) ati.href = url;
+      }
+      // Inject into manifest via JS
+      const link = document.getElementById('manifestLink');
+      if (link && s === 192) {
+        // Update manifest with icon programmatically
+        const manifest = {
+          name: '土土时钟',
+          short_name: '土土时钟',
+          start_url: '/portfolio/pomodoro.html',
+          display: 'standalone',
+          background_color: '#FFF5F0',
+          theme_color: '#FF8C8C',
+          icons: sizes.map(sz => ({
+            src: drawIcon(sz).toDataURL('image/png'),
+            sizes: `${sz}x${sz}`,
+            type: 'image/png'
+          }))
+        };
+        const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+        link.href = URL.createObjectURL(blob);
+      }
+    });
+  })();
+
+  // === Service Worker ===
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/portfolio/sw.js');
   }
+
+  // === Custom Install Button ===
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const btn = document.getElementById('installBtn');
+    if (btn) {
+      btn.style.display = 'flex';
+      btn.onclick = async () => {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          btn.textContent = '✅ 已添加';
+          setTimeout(() => btn.style.display = 'none', 2000);
+        }
+        deferredPrompt = null;
+      };
+    }
+  });
+
+  // === Check if already installed ===
+  window.addEventListener('appinstalled', () => {
+    const btn = document.getElementById('installBtn');
+    if (btn) btn.style.display = 'none';
+  });
 </script>
 </body>
 </html>
