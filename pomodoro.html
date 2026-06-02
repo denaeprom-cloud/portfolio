@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -959,6 +960,53 @@
     50%      { transform: translateY(-5px); }
   }
 
+  /* ===== Install Guide Overlay ===== */
+  .install-guide-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(90, 55, 40, 0.25);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+    backdrop-filter: blur(4px);
+  }
+
+  .install-guide-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 1.8rem;
+    width: 88%;
+    max-width: 300px;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(140, 100, 70, 0.2);
+    animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .guide-step {
+    padding: 0.55rem 0.8rem;
+    margin-bottom: 0.4rem;
+    background: #FFFAF8;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    color: #5C3D2E;
+    text-align: left;
+  }
+
+  .install-guide-close {
+    margin-top: 1rem;
+    padding: 0.6rem 2rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font);
+  }
+
   /* ===== Responsive: Tablet ===== */
   @media (max-width: 780px) {
     .app {
@@ -1884,28 +1932,73 @@
 
   // === Custom Install Button ===
   let deferredPrompt = null;
+
+  // Always show button on mobile unless already standalone
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+  if (isMobile && !isStandalone) {
+    const btn = document.getElementById('installBtn');
+    if (btn) btn.style.display = 'flex';
+  }
+
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
-    const btn = document.getElementById('installBtn');
-    if (btn) {
-      btn.style.display = 'flex';
-      btn.onclick = async () => {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          btn.textContent = '✅ 已添加';
-          setTimeout(() => btn.style.display = 'none', 2000);
-        }
-        deferredPrompt = null;
-      };
+  });
+
+  document.getElementById('installBtn').addEventListener('click', async () => {
+    if (deferredPrompt) {
+      // Native PWA install (Chrome, Edge, Samsung Browser, etc.)
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      const btn = document.getElementById('installBtn');
+      if (outcome === 'accepted') {
+        btn.textContent = '✅ 已添加';
+        setTimeout(() => btn.style.display = 'none', 2000);
+      }
+      deferredPrompt = null;
+    } else {
+      // Fallback: show guide for browsers without PWA support
+      showInstallGuide();
     }
   });
 
-  // === Check if already installed ===
+  function showInstallGuide() {
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isQQ = /QQBrowser|MQQBrowser/i.test(navigator.userAgent);
+
+    let guideHTML;
+    if (isQQ) {
+      guideHTML = `<div class="guide-step">💡 QQ浏览器不支持一键安装</div>
+        <div class="guide-step">📋 链接已复制</div>
+        <div class="guide-step">🔗 请在 <b>Chrome浏览器</b> 中打开</div>`;
+      try { navigator.clipboard.writeText(location.href); } catch(e) {}
+    } else if (isIOS) {
+      guideHTML = `<div class="guide-step">1️⃣ 点底部 <b>分享</b> 按钮</div>
+        <div class="guide-step">2️⃣ 滑动找到 <b>添加到主屏幕</b></div>
+        <div class="guide-step">3️⃣ 点右上角「添加」</div>`;
+    } else {
+      guideHTML = `<div class="guide-step">1️⃣ 点右上角 <b>⋮</b> 菜单</div>
+        <div class="guide-step">2️⃣ 选择 <b>添加到主屏幕</b></div>
+        <div class="guide-step">3️⃣ 确认添加即可</div>`;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'install-guide-overlay';
+    overlay.onclick = ev => { if (ev.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `<div class="install-guide-card">
+        <div style="font-size:2rem;margin-bottom:0.4rem;">📲</div>
+        <div style="font-weight:800;font-size:1rem;color:#5C3D2E;margin-bottom:1rem;">添加到桌面</div>
+        ${guideHTML}
+        <button class="install-guide-close" onclick="this.closest('.install-guide-overlay').remove()">知道啦</button>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+
   window.addEventListener('appinstalled', () => {
     const btn = document.getElementById('installBtn');
-    if (btn) btn.style.display = 'none';
+    if (btn) { btn.textContent = '✅ 已添加'; setTimeout(() => btn.style.display = 'none', 2000); }
   });
 </script>
 </body>
